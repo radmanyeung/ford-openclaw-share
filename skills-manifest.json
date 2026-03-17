@@ -86,7 +86,8 @@
       "description": "自我學習、影片學習",
       "skills": [
         "active-learning-node",
-        "youtube-video-learner"
+        "youtube-video-learner",
+        "youtube-skill-generator"
       ]
     },
     "utility": {
@@ -253,6 +254,11 @@
       "description": "YouTube 影片學習（字幕提取 + 結構化分析）",
       "hasScripts": true,
       "hasRefs": true
+    },
+    "youtube-skill-generator": {
+      "description": "將 YouTube 教學影片轉換成可安裝嘅 OpenClaw/Claude Code skill",
+      "hasScripts": false,
+      "hasRefs": false
     },
     "weather": {
       "description": "天氣查詢（免 API key）",

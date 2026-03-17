@@ -1,6 +1,6 @@
 # OpenClaw Setup Guide
 
-從零開始設定 [OpenClaw](https://docs.openclaw.ai/) 多 Agent AI 系統。包含完整嘅互動式設定教學 + 32 個預建 Skills。
+從零開始設定 [OpenClaw](https://docs.openclaw.ai/) 多 Agent AI 系統。包含完整嘅互動式設定教學 + 33 個預建 Skills。
 
 ## 呢個 Repo 有咩
 
@@ -9,7 +9,7 @@
 │   ├── SKILL.md              # 互動式 setup skill（OpenClaw/Claude Code agent 用）
 │   ├── env-check.sh          # 環境檢查腳本（對比你嘅環境同參考設定）
 │   └── install-skills.sh     # Skills 安裝腳本
-├── skills/                   # 32 個 OpenClaw Skills（10 分類）
+├── skills/                   # 33 個 OpenClaw Skills（10 分類）
 ├── skills-manifest.json      # Skills 清單 + 分類索引
 ├── .env.example              # API key 模板
 └── README.md
@@ -55,7 +55,7 @@ chmod 600 ~/.openclaw/.env
 # 睇所有分類
 bash setup/install-skills.sh --list
 
-# 安裝全部（32 個）
+# 安裝全部（33 個）
 bash setup/install-skills.sh --all
 
 # 或者揀分類
@@ -96,7 +96,7 @@ Setup Skill 包含 13 個獨立模組，可以揀需要嘅跟：
 | 9 | Memory Plugin | memory-lancedb-pro 長期記憶 |
 | 10 | Cron Jobs | 定時任務排程 |
 | 11 | Gateway | 網關設定（port/auth/安全） |
-| 12 | Skills 安裝 | 32 個 skill 分 10 類 |
+| 12 | Skills 安裝 | 33 個 skill 分 10 類 |
 | 13 | OpenClaw CLI 基礎 | onboard / start / tui 常用指令 |
 | 14 | Windows SSH 隧道 | 建立 .ps1 腳本連接 VPS |
 | 15 | 遠端 Web UI 存取 | 透過 SSH tunnel 用瀏覽器操作 |
@@ -108,7 +108,7 @@ Setup Skill 包含 13 個獨立模組，可以揀需要嘅跟：
 
 ## Skills 分類
 
-32 個 Skills 分為 10 個分類：
+33 個 Skills 分為 10 個分類：
 
 | 分類 | 數量 | 說明 | 需要嘅 API Key |
 |------|------|------|----------------|
@@ -120,7 +120,7 @@ Setup Skill 包含 13 個獨立模組，可以揀需要嘅跟：
 | **research** | 3 | Tavily web search、深度研究、情報收集 | `TAVILY_API_KEY` |
 | **data** | 2 | JSON/YAML 驗證同自動修復 | — |
 | **integration** | 2 | API 聚合器、自動報告管線 | — |
-| **learning** | 2 | 自我學習、YouTube 影片學習 | — |
+| **learning** | 3 | 自我學習、YouTube 影片學習、影片轉 Skill | — |
 | **utility** | 1 | 天氣查詢（免 API key） | — |
 
 完整清單見 [`skills-manifest.json`](skills-manifest.json)。
