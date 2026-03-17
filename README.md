@@ -6,7 +6,7 @@
 
 呢個 Guide 包含：
 - 一步步教你安裝同設定
-- 33 個預建 Skills（等於 agent 嘅技能包）
+- 34 個預建 Skills（等於 agent 嘅技能包）
 - 環境檢查工具（自動幫你睇缺咩）
 - 互動式 agent 引導（裝好之後可以用 AI 幫你設定）
 
@@ -30,7 +30,7 @@
 │   ├── env-check.sh          # 環境檢查腳本（對比你嘅環境同參考設定）
 │   ├── install-skills.sh     # Skills 安裝腳本
 │   └── openclaw-tunnel.ps1   # Windows SSH 隧道腳本（從 Windows 連入 VPS）
-├── skills/                   # 33 個 OpenClaw Skills（10 分類）
+├── skills/                   # 34 個 OpenClaw Skills（10 分類）
 ├── skills-manifest.json      # Skills 清單 + 分類索引
 ├── .env.example              # API key 模板
 └── README.md
@@ -165,7 +165,7 @@ Skills 就好似 App 咁，每個 skill 教識 agent 做一樣嘢（例如搜尋
 # 睇所有分類同 skill 清單
 bash setup/install-skills.sh --list
 
-# 安裝全部 33 個（推薦新手用呢個）
+# 安裝全部 34 個（推薦新手用呢個）
 bash setup/install-skills.sh --all
 
 # 或者只裝某幾個分類（用逗號分隔）
@@ -475,11 +475,11 @@ Setup Skill 包含 16 個獨立模組，你可以揀需要嘅跟：
 
 ## Skills 分類
 
-33 個 Skills 分為 10 類：
+34 個 Skills 分為 10 類：
 
 | 分類 | 數量 | 做咩用 | 需要 API Key？ |
 |------|------|--------|----------------|
-| **core** | 6 | OpenClaw 系統管理同設定 | 唔需要 |
+| **core** | 7 | OpenClaw 系統管理同設定 | 唔需要 |
 | **memory** | 3 | AI 長期記憶（記得之前講過咩） | 需要 `JINA_API_KEY` |
 | **monitoring** | 4 | 自動監控、日報週報、log 管理 | 唔需要 |
 | **skills-mgmt** | 6 | Skill 搜尋、審計、版本管理 | 唔需要 |

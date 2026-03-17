@@ -1,5 +1,5 @@
 {
-  "version": "2026-03-17",
+  "version": "2026-03-18",
   "description": "OpenClaw Skills 清單 — 分類同描述，用於 setup guide 安裝",
   "categories": {
     "core": {
@@ -11,7 +11,8 @@
         "openclaw-memory-bridge",
         "gateway-autoscaler",
         "provider-health-check",
-        "healthcheck"
+        "healthcheck",
+        "readme-publisher"
       ]
     },
     "memory": {
@@ -262,6 +263,11 @@
     },
     "weather": {
       "description": "天氣查詢（免 API key）",
+      "hasScripts": false,
+      "hasRefs": false
+    },
+    "readme-publisher": {
+      "description": "更新 ford-openclaw-share repo README 並 push GitHub",
       "hasScripts": false,
       "hasRefs": false
     }
