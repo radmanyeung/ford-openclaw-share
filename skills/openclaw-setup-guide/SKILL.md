@@ -77,7 +77,7 @@ OpenClaw 設定模組 — 揀你要設定嘅（輸入數字，如 "1,2,3" 或 "a
 
 基礎設定：
  1. 環境變數 (.env)         — API keys 集中管理
- 2. Model Providers         — 設定 AI 模型來源（NVIDIA/Poe/Qwen/Jina）
+ 2. Model Providers         — 設定 AI 模型來源（NVIDIA/Qwen/Jina）
  3. Agents                  — 建立 AI agents（角色、模型、權限）
  4. 工具權限與 Hooks         — tool profiles + 內建 hooks
 
@@ -120,7 +120,7 @@ Skills：
 
 ### 4. 互動問答
 問用戶需要邊啲選項。例如：
-- Module 2：「你有邊啲 API key？(nvidia/poe/jina/qwen)」
+- Module 2：「你有邊啲 API key？(nvidia/jina/qwen)」
 - Module 3：「你想建幾多個 agent？每個嘅角色係咩？」
 - Module 7：「邊個 group 要限制存取？」
 
@@ -159,8 +159,6 @@ grep -oP '^[A-Z_]+(?==)' ~/.openclaw/.env 2>/dev/null
 | `NVIDIA_DEEPSEEK_AI_API_KEY` | DeepSeek via NVIDIA | 同上 |
 | `NVIDIA_QWEN_API_KEY` | Qwen via NVIDIA | 同上 |
 | `NVIDIA_Z_AI_API_KEY` | GLM via NVIDIA | 同上 |
-| `POE_OC_API_KEY` | Poe (需訂閱) | https://poe.com/api_key |
-| `POE_D_API_KEY` | Poe 第二個 key | 同上 |
 | `JINA_API_KEY` | Jina (memory plugin) | https://jina.ai |
 
 **可選 keys：**
@@ -209,23 +207,6 @@ for name, p in providers.items():
     "contextWindow": 128000,                   // 上下文長度
     "maxTokens": 8192                          // 最大輸出 tokens
   }]
-}
-```
-
-**Poe API（多模型聚合）：**
-```jsonc
-"poe OC": {
-  "baseUrl": "https://api.poe.com/v1",
-  "apiKey": "${POE_OC_API_KEY}",
-  "api": "openai-completions",
-  "models": [
-    // Poe 支援嘅模型 — 揀你想用嘅加
-    { "id": "claude-opus-4.6", "name": "Claude Opus 4.6", "input": ["text","image"], "contextWindow": 200000, "maxTokens": 8192 },
-    { "id": "claude-sonnet-4.6", "name": "Claude Sonnet 4.6", "input": ["text","image"], "contextWindow": 200000, "maxTokens": 8192 },
-    { "id": "gpt-5.3-codex", "name": "GPT-5.3-codex", "input": ["text","image"], "contextWindow": 200000, "maxTokens": 8192 },
-    { "id": "gemini-3.1-pro", "name": "Gemini 3.1 Pro", "input": ["text","image"], "contextWindow": 200000, "maxTokens": 8192 },
-    { "id": "minimax-m2.5", "name": "Minimax M2.5", "input": ["text","image"], "contextWindow": 128000, "maxTokens": 8192 }
-  ]
 }
 ```
 

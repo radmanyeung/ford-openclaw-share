@@ -86,7 +86,7 @@ Setup Skill 包含 13 個獨立模組，可以揀需要嘅跟：
 | # | 模組 | 說明 |
 |---|------|------|
 | 1 | 環境變數 (.env) | API keys 集中管理 |
-| 2 | Model Providers | AI 模型來源（NVIDIA/Poe/Qwen/Jina） |
+| 2 | Model Providers | AI 模型來源（NVIDIA/Qwen/Jina） |
 | 3 | Agents | 建立 AI agents（角色、模型、權限） |
 | 4 | 工具權限與 Hooks | Tool profiles + 內建 hooks |
 | 5 | Telegram 整合 | Bot 建立 + channel 啟用 |
@@ -129,7 +129,6 @@ Setup Skill 包含 13 個獨立模組，可以揀需要嘅跟：
 | Provider | 申請地址 | 備註 |
 |----------|----------|------|
 | NVIDIA NIM | https://build.nvidia.com | 免費 tier，推薦新手 |
-| Poe | https://poe.com/api_key | 需 Poe 訂閱，多模型聚合 |
 | Jina | https://jina.ai | 免費 tier，memory plugin 用 |
 | Telegram Bot | https://t.me/BotFather | `/newbot` 建立 |
 | Tavily | https://tavily.com | 可選，web search 用 |
