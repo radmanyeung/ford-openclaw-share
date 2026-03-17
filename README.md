@@ -97,7 +97,10 @@ Setup Skill 包含 13 個獨立模組，可以揀需要嘅跟：
 | 10 | Cron Jobs | 定時任務排程 |
 | 11 | Gateway | 網關設定（port/auth/安全） |
 | 12 | Skills 安裝 | 32 個 skill 分 10 類 |
-| 13 | 驗證與啟動 | 設定檢查 + 啟動 |
+| 13 | OpenClaw CLI 基礎 | onboard / start / tui 常用指令 |
+| 14 | Windows SSH 隧道 | 建立 .ps1 腳本連接 VPS |
+| 15 | 遠端 Web UI 存取 | 透過 SSH tunnel 用瀏覽器操作 |
+| 16 | 驗證與啟動 | 設定檢查 + 啟動 |
 
 每個模組嘅詳細內容喺 [`setup/SKILL.md`](setup/SKILL.md)。
 
