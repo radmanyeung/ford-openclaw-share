@@ -1,0 +1,39 @@
+{
+  "endpoints": {
+    "tavily": {
+      "baseUrl": "https://api.tavily.com/search",
+      "timeout": 30000,
+      "retry": 2,
+      "rateLimit": 50
+    },
+    "web_fetch": {
+      "baseUrl": "https://r.jina.ai/http",
+      "timeout": 15000,
+      "retry": 1
+    }
+  },
+  "rateLimit": {
+    "default": {
+      "requestsPerMinute": 60,
+      "burst": 10
+    },
+    "tavily": {
+      "requestsPerMinute": 50,
+      "burst": 5
+    }
+  },
+  "cache": {
+    "defaultTTL": 300,
+    "maxSize": 100,
+    "dir": "./cache"
+  },
+  "circuitBreaker": {
+    "failureThreshold": 5,
+    "resetTimeout": 30000,
+    "halfOpenRequests": 3
+  },
+  "logging": {
+    "dir": "./logs",
+    "level": "info"
+  }
+}

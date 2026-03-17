@@ -1,0 +1,8 @@
+{
+  "overlapThreshold": 0.4,
+  "ignoredSkills": [],
+  "skillPaths": [
+    "~/.openclaw/workspace/skills",
+    "/usr/lib/node_modules/openclaw/skills"
+  ]
+}

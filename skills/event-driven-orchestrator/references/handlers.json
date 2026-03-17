@@ -1,0 +1,44 @@
+{
+  "handlers": [
+    {
+      "id": "h-001",
+      "event": "research.daily.complete",
+      "handler": "bash ~/.openclaw/workspace/skills/research-tracker/scripts/tracker.sh scan --days 1",
+      "throttleSec": 3600,
+      "dedupKey": "research-scan",
+      "enabled": true
+    },
+    {
+      "id": "h-002",
+      "event": "context.threshold.exceeded",
+      "handler": "bash ~/.openclaw/workspace/skills/context-manager/scripts/context-ctl.sh compress",
+      "throttleSec": 600,
+      "dedupKey": "context-compress",
+      "enabled": true
+    },
+    {
+      "id": "h-003",
+      "event": "skill.audit.scheduled",
+      "handler": "bash ~/.openclaw/workspace/skills/skill-auditor/scripts/audit.sh full",
+      "throttleSec": 86400,
+      "dedupKey": "skill-audit",
+      "enabled": true
+    },
+    {
+      "id": "h-004",
+      "event": "memory.janitor.complete",
+      "handler": "bash ~/.openclaw/workspace/skills/context-manager/scripts/context-ctl.sh status",
+      "throttleSec": 86400,
+      "dedupKey": "janitor-status",
+      "enabled": true
+    },
+    {
+      "id": "h-005",
+      "event": "learning.applied",
+      "handler": "bash ~/.openclaw/workspace/skills/research-tracker/scripts/tracker.sh status",
+      "throttleSec": 3600,
+      "dedupKey": "learning-status",
+      "enabled": true
+    }
+  ]
+}

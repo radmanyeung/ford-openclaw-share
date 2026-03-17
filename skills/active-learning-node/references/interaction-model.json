@@ -1,0 +1,9 @@
+{
+  "version": "2.0.0",
+  "updated": "2026-03-15T20:30:09Z",
+  "source": "tsls-pipeline",
+  "preferred_response_style": "direct_and_structured",
+  "preferred_language": "traditional_chinese",
+  "active_hours": "08:00-23:00 Asia/Hong_Kong",
+  "observation_based": true
+}

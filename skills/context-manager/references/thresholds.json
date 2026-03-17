@@ -1,0 +1,10 @@
+{
+  "workingHours": { "start": "09:00", "end": "18:00", "triggerPct": 70, "maxContext": 200000 },
+  "idleHours": { "start": "18:00", "end": "09:00", "triggerPct": 70, "maxContext": 200000 },
+  "reservePct": 20,
+  "archive": {
+    "defaultImportance": "medium",
+    "retentionDays": { "critical": -1, "high": 180, "medium": 90, "low": 30 },
+    "similarityThreshold": 0.7
+  }
+}

@@ -1,0 +1,42 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "SkillDependencies",
+  "description": "Dependency declaration for a skill",
+  "type": "object",
+  "required": ["skill", "dependencies"],
+  "properties": {
+    "skill": {
+      "type": "string",
+      "description": "Skill name"
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "description": "Skill version"
+    },
+    "dependencies": {
+      "type": "object",
+      "properties": {
+        "hard": {
+          "type": "array",
+          "items": { "type": "string" },
+          "default": [],
+          "description": "Required dependencies"
+        },
+        "soft": {
+          "type": "array",
+          "items": { "type": "string" },
+          "default": [],
+          "description": "Recommended dependencies"
+        },
+        "optional": {
+          "type": "array",
+          "items": { "type": "string" },
+          "default": [],
+          "description": "Optional dependencies"
+        }
+      },
+      "required": ["hard"]
+    }
+  }
+}

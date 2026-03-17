@@ -1,0 +1,77 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "OpenClawConfig",
+  "type": "object",
+  "properties": {
+    "gateway": {
+      "type": "object",
+      "properties": {
+        "host": { "type": "string", "default": "localhost" },
+        "port": { "type": "number", "default": 3000 },
+        "token": { "type": "string" },
+        "profile": { "type": "string", "default": "default" }
+      }
+    },
+    "models": {
+      "type": "object",
+      "properties": {
+        "default": { "type": "string" },
+        "maxTokens": { "type": "number", "default": 128000 },
+        "providers": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "apiKey": { "type": "string" },
+              "endpoint": { "type": "string" },
+              "models": { "type": "array", "items": { "type": "string" } }
+            }
+          }
+        },
+        "agents": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "model": { "type": "string" },
+              "fallback": { "type": "array", "items": { "type": "string" } }
+            }
+          }
+        },
+        "fallbacks": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "array",
+            "items": { "type": "string" }
+          }
+        }
+      }
+    },
+    "channels": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "enabled": { "type": "boolean", "default": true },
+          "webhookUrl": { "type": "string" },
+          "accountId": { "type": "string" }
+        }
+      }
+    },
+    "memory": {
+      "type": "object",
+      "properties": {
+        "contextLimit": { "type": "number", "default": 200000 },
+        "compression": { "type": "boolean", "default": true },
+        "autoSummarize": { "type": "boolean", "default": true }
+      }
+    },
+    "skills": {
+      "type": "object",
+      "properties": {
+        "path": { "type": "string" },
+        "autoLoad": { "type": "boolean", "default": true }
+      }
+    }
+  }
+}

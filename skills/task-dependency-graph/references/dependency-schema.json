@@ -1,0 +1,35 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Skill Dependency Registry",
+  "description": "Schema for skill dependency declarations",
+  "type": "object",
+  "additionalProperties": {
+    "type": "object",
+    "required": ["version", "dependencies"],
+    "properties": {
+      "version": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
+      "dependencies": {
+        "type": "object",
+        "properties": {
+          "hard": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Hard dependencies (blocking if missing)"
+          },
+          "soft": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Soft dependencies (warn if missing)"
+          },
+          "optional": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Optional dependencies (silent if missing)"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "additionalProperties": false
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "idleWarningHours": 48,
+  "overdueMultiplier": 2.0,
+  "failureAlertCount": 2,
+  "ignoredJobs": []
+}

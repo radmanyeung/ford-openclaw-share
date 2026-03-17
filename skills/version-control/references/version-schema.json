@@ -1,0 +1,78 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Skill Version Registry Schema",
+  "description": "Schema for tracking skill versions, changes, and deployment history",
+  "type": "object",
+  "required": ["$schema", "generated", "skills"],
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "URI to the JSON schema"
+    },
+    "generated": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Timestamp when registry was generated"
+    },
+    "skills": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/definitions/skillEntry"
+      }
+    }
+  },
+  "definitions": {
+    "skillEntry": {
+      "type": "object",
+      "required": ["current", "versions"],
+      "properties": {
+        "current": {
+          "type": "string",
+          "description": "Currently active version"
+        },
+        "versions": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/versionEntry" },
+          "description": "All versions of this skill"
+        }
+      }
+    },
+    "versionEntry": {
+      "type": "object",
+      "required": ["version", "date", "description"],
+      "properties": {
+        "version": {
+          "type": "string",
+          "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$",
+          "description": "Semantic version number (MAJOR.MINOR.PATCH)"
+        },
+        "date": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When this version was created"
+        },
+        "description": {
+          "type": "string",
+          "description": "Summary of changes in this version"
+        },
+        "files": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Files included in this version"
+        },
+        "hash": {
+          "type": "string",
+          "description": "SHA-256 hash of the version package"
+        },
+        "breaking": {
+          "type": "boolean",
+          "description": "Whether this is a breaking change"
+        },
+        "rollback": {
+          "type": "boolean",
+          "description": "Whether rollback is available for this version"
+        }
+      }
+    }
+  }
+}

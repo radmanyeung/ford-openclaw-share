@@ -1,0 +1,263 @@
+{
+  "version": "2026-03-17",
+  "description": "OpenClaw Skills 清單 — 分類同描述，用於 setup guide 安裝",
+  "categories": {
+    "core": {
+      "label": "核心管理",
+      "description": "OpenClaw 系統管理同設定",
+      "skills": [
+        "openclaw-config",
+        "openclaw-setup-guide",
+        "openclaw-memory-bridge",
+        "gateway-autoscaler",
+        "provider-health-check",
+        "healthcheck"
+      ]
+    },
+    "memory": {
+      "label": "記憶系統",
+      "description": "長期記憶、清理、驗證",
+      "requires": ["JINA_API_KEY"],
+      "skills": [
+        "memory-lancedb-pro",
+        "memory-hygiene",
+        "context-manager"
+      ]
+    },
+    "monitoring": {
+      "label": "監控與報告",
+      "description": "Cron 監控、日報、研究追蹤",
+      "skills": [
+        "cron-health-dashboard",
+        "report-generator",
+        "research-tracker",
+        "log-recovery"
+      ]
+    },
+    "skills-mgmt": {
+      "label": "Skill 管理",
+      "description": "Skill 搜尋、審計、版本控制",
+      "skills": [
+        "find-skills",
+        "skill-registry",
+        "skill-auditor",
+        "skill-dependency-manager",
+        "version-control",
+        "task-dependency-graph"
+      ]
+    },
+    "workflow": {
+      "label": "工作流程",
+      "description": "任務編排、事件驅動、模板",
+      "skills": [
+        "workflow-orchestrator",
+        "workflow-template-library",
+        "event-driven-orchestrator"
+      ]
+    },
+    "research": {
+      "label": "研究與搜尋",
+      "description": "Web 搜尋、深度研究、情報收集",
+      "requires": ["TAVILY_API_KEY"],
+      "skills": [
+        "tavily-search",
+        "tavily-research-agent",
+        "daily-intelligence-aggregator"
+      ]
+    },
+    "data": {
+      "label": "資料驗證",
+      "description": "JSON/YAML 驗證同修復",
+      "skills": [
+        "json-yaml-validator",
+        "schema-validator"
+      ]
+    },
+    "integration": {
+      "label": "整合工具",
+      "description": "API 聚合、報告管線",
+      "skills": [
+        "api-gateway-integrator",
+        "automated-report-pipeline"
+      ]
+    },
+    "learning": {
+      "label": "學習與進化",
+      "description": "自我學習、影片學習",
+      "skills": [
+        "active-learning-node",
+        "youtube-video-learner"
+      ]
+    },
+    "utility": {
+      "label": "實用工具",
+      "description": "天氣等通用功能",
+      "skills": [
+        "weather"
+      ]
+    }
+  },
+  "skills": {
+    "openclaw-config": {
+      "description": "管理 OpenClaw 設定檔（openclaw.json, gateway）",
+      "hasScripts": true,
+      "hasRefs": true
+    },
+    "openclaw-setup-guide": {
+      "description": "互動式 OpenClaw 設定教學（環境檢查 + 逐步引導）",
+      "hasScripts": true,
+      "hasRefs": false
+    },
+    "openclaw-memory-bridge": {
+      "description": "Claude Code ↔ OpenClaw LanceDB 記憶橋接",
+      "hasScripts": false,
+      "hasRefs": false
+    },
+    "gateway-autoscaler": {
+      "description": "Gateway 健康監控、crash loop 偵測、自動重啟",
+      "hasScripts": true,
+      "hasRefs": true
+    },
+    "provider-health-check": {
+      "description": "測試所有 model provider 連線同回應",
+      "hasScripts": true,
+      "hasRefs": true
+    },
+    "healthcheck": {
+      "description": "主機安全加固同風險評估",
+      "hasScripts": false,
+      "hasRefs": false
+    },
+    "memory-lancedb-pro": {
+      "description": "LanceDB 長期記憶（hybrid retrieval + Smart Extraction）",
+      "hasScripts": false,
+      "hasRefs": true,
+      "source": "CortexReach/memory-lancedb-pro-skill"
+    },
+    "memory-hygiene": {
+      "description": "LanceDB 記憶清理同優化",
+      "hasScripts": false,
+      "hasRefs": false
+    },
+    "context-manager": {
+      "description": "Context lifecycle 管理（壓縮、摘要、歸檔）",
+      "hasScripts": true,
+      "hasRefs": true
+    },
+    "cron-health-dashboard": {
+      "description": "Cron job 健康監控面板",
+      "hasScripts": true,
+      "hasRefs": true
+    },
+    "report-generator": {
+      "description": "日報/週報生成（memory + git log + context）",
+      "hasScripts": true,
+      "hasRefs": true
+    },
+    "research-tracker": {
+      "description": "研究發現追蹤同假說驗證",
+      "hasScripts": true,
+      "hasRefs": true
+    },
+    "log-recovery": {
+      "description": "結構化 log 復原、錯誤分類、輪替歸檔",
+      "hasScripts": false,
+      "hasRefs": false
+    },
+    "find-skills": {
+      "description": "搜尋同發現可安裝嘅 skill",
+      "hasScripts": false,
+      "hasRefs": false
+    },
+    "skill-registry": {
+      "description": "Skill 註冊同發現中心",
+      "hasScripts": true,
+      "hasRefs": true
+    },
+    "skill-auditor": {
+      "description": "Skill 衝突偵測、審計報告",
+      "hasScripts": true,
+      "hasRefs": true
+    },
+    "skill-dependency-manager": {
+      "description": "Skill 依賴追蹤同管理",
+      "hasScripts": true,
+      "hasRefs": true
+    },
+    "version-control": {
+      "description": "Skill 版本管理同 rollback",
+      "hasScripts": true,
+      "hasRefs": true
+    },
+    "task-dependency-graph": {
+      "description": "Skill 依賴圖譜同版本管理",
+      "hasScripts": true,
+      "hasRefs": true
+    },
+    "workflow-orchestrator": {
+      "description": "跨平台任務編排（依賴、並行、retry）",
+      "hasScripts": true,
+      "hasRefs": true
+    },
+    "workflow-template-library": {
+      "description": "預建工作流程模板庫",
+      "hasScripts": true,
+      "hasRefs": false
+    },
+    "event-driven-orchestrator": {
+      "description": "事件驅動路由（heartbeat/cron/webhook）",
+      "hasScripts": true,
+      "hasRefs": true
+    },
+    "tavily-search": {
+      "description": "AI 優化 web 搜尋（Tavily API）",
+      "hasScripts": true,
+      "hasRefs": false
+    },
+    "tavily-research-agent": {
+      "description": "深度研究助手（搜尋 + 內容提取 + 報告）",
+      "hasScripts": true,
+      "hasRefs": true
+    },
+    "daily-intelligence-aggregator": {
+      "description": "多源情報收集（RSS/Telegram/Slack + Tavily）",
+      "hasScripts": true,
+      "hasRefs": true
+    },
+    "json-yaml-validator": {
+      "description": "JSON/YAML 自動驗證同修復",
+      "hasScripts": true,
+      "hasRefs": false
+    },
+    "schema-validator": {
+      "description": "Schema 驗證同自動修正",
+      "hasScripts": true,
+      "hasRefs": true
+    },
+    "api-gateway-integrator": {
+      "description": "API 聚合器（rate limit、cache、failover）",
+      "hasScripts": true,
+      "hasRefs": true
+    },
+    "automated-report-pipeline": {
+      "description": "自動報告管線（收集→分析→交付）",
+      "hasScripts": true,
+      "hasRefs": false
+    },
+    "active-learning-node": {
+      "description": "Session 模式學習同自我改進",
+      "hasScripts": true,
+      "hasRefs": true
+    },
+    "youtube-video-learner": {
+      "description": "YouTube 影片學習（字幕提取 + 結構化分析）",
+      "hasScripts": true,
+      "hasRefs": true
+    },
+    "weather": {
+      "description": "天氣查詢（免 API key）",
+      "hasScripts": false,
+      "hasRefs": false
+    }
+  }
+}
