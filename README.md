@@ -16,10 +16,10 @@
 
 **Part 1 — 安裝 + 上手**
 - [Step 1：安裝 OpenClaw + 進入儀表板](#step-1安裝-openclaw--進入儀表板)
-- [Step 2：用 OpenClaw Prompt 完成設定](#step-2用-openclaw-prompt-完成設定)
+- [Step 2：連接 Messaging 平台](#step-2連接-messaging-平台)
 - [Step 3：設定 API Keys](#step-3設定-api-keys)
 - [Step 4：安裝 Skills](#step-4安裝-skills)
-- [Step 5：連接 Messaging 平台](#step-5連接-messaging-平台)
+- [Step 5：用 OpenClaw Prompt 完成設定](#step-5用-openclaw-prompt-完成設定)
 
 **Part 2 — 進階設定 + 參考**
 - [設定模組（進階）](#設定模組進階)
@@ -95,199 +95,9 @@ Windows 用 PowerShell 打同一條指令，或者用 `setup/openclaw-tunnel.ps1
 
 ---
 
-### Step 2：用 OpenClaw Prompt 完成設定
+### Step 2：連接 Messaging 平台
 
-**裝好之後，大部分設定可以直接喺儀表板 WebChat / Telegram / CLI 用 prompt 叫 agent 做。** 以下係常用 prompt，直接 copy 去用。
-
-### 初始設定
-
-```
-幫我 setup openclaw，由環境檢查開始
-```
-> Agent 會自動觸發 `openclaw-setup-guide` skill，逐步引導你完成所有設定。
-
-### API Key 設定
-
-```
-幫我設定 API keys。我有 NVIDIA 同 Telegram 嘅 key，幫我加入 .env
-```
-
-```
-幫我加一個新嘅 model provider，用 NVIDIA NIM，API key 係 nvapi-xxx
-```
-
-### Agent 管理
-
-```
-幫我建一個新 agent，叫「助手」，用 NVIDIA 嘅 minimax model
-```
-
-```
-幫我睇下而家有邊啲 agent，每個用咩 model
-```
-
-```
-幫我將 GPT agent 嘅 model 改做 gpt-5.4，fallback 用 minimax
-```
-
-### Telegram 設定
-
-```
-幫我設定 Telegram bot，我個 bot token 係 123456789:ABCdef...
-```
-
-```
-幫我建一個 Telegram group 綁定，將 gpt agent 綁去 group ID -5278907100
-```
-
-```
-幫我設定 Telegram 安全，只有我（user ID 1318441952）可以觸發 agent
-```
-
-### WhatsApp 設定
-
-```
-幫我啟用 WhatsApp channel，然後登入
-```
-
-```
-幫我綁定一個 WhatsApp group 去 claude agent
-```
-
-### WeChat 設定
-
-```
-幫我安裝 WeChat plugin 同設定微信連接
-```
-
-### Cron Job 管理
-
-```
-幫我設一個 cron job，每日凌晨 1 點用 main agent 做研究
-```
-
-```
-幫我檢查所有 cron job 嘅狀態
-```
-
-```
-幫我修復 delivery 失敗嘅 cron job
-```
-
-### Memory Plugin
-
-```
-幫我安裝 memory-lancedb-pro plugin，用 Jina 做 embedding
-```
-
-```
-幫我檢查 memory 系統有冇正常運作
-```
-
-### 診斷同修復
-
-```
-openclaw config validate 有 error，幫我修
-```
-
-```
-幫我檢查所有 provider 嘅連線狀態
-```
-
-```
-幫我掃描設定檔有冇安全問題（明文 key、權限太鬆等）
-```
-
-### Skills 管理
-
-```
-幫我安裝所有 skills
-```
-
-```
-幫我睇下裝咗邊啲 skill，有冇缺嘅
-```
-
-```
-幫我搵一個可以做 web search 嘅 skill
-```
-
-> **Tips：**
-> - 你可以用任何語言同 agent 講（廣東話、普通話、英文都得）
-> - Agent 會自動讀取相關 skill 嘅指引嚟幫你
-> - 如果 agent 做錯咗，直接話佢「唔係，我要嘅係 XXX」就得
-> - 複雜設定可以叫 agent 先 validate 再 apply：「幫我改，但改之前先 validate」
-
----
-
-### Step 3：設定 API Keys
-
-**方法 A — 手動編輯（傳統）：**
-
-```bash
-cp .env.example ~/.openclaw/.env
-chmod 600 ~/.openclaw/.env
-nano ~/.openclaw/.env
-```
-
-> `nano` 編輯完按 `Ctrl+O` 儲存，`Ctrl+X` 離開。
-
-**方法 B — 用 OpenClaw prompt（推薦唔熟 CLI 嘅人）：**
-
-```
-幫我設定 API keys。
-我有以下 key：
-- NVIDIA: nvapi-xxxxxxxx
-- Telegram Bot: 7123456789:AAHxxxxx
-- Gateway 密碼我想用: my-secret-123
-幫我寫入 .env
-```
-
-**你需要填邊啲 Key？**
-
-| Key 名稱 | 點樣攞 | 用途 | 一定要？ |
-|-----------|---------|------|----------|
-| `OPENCLAW_GATEWAY_TOKEN` | **自己揀一個密碼**（任意字串） | 用嚟登入 OpenClaw 網頁介面 | ✅ 必要 |
-| `TELEGRAM_BOT_TOKEN` | 喺 Telegram 搵 [@BotFather](https://t.me/BotFather)，輸入 `/newbot` | 用嚟連接 Telegram bot | ✅ 如果要用 Telegram |
-| `NVIDIA_..._API_KEY` | 去 [build.nvidia.com](https://build.nvidia.com) 註冊（免費） | 用嚟接入多款免費 AI 模型 | ✅ 推薦（免費） |
-| `JINA_API_KEY` | 去 [jina.ai](https://jina.ai) 註冊（免費） | 用嚟做長期記憶嘅向量搜尋 | 可選 |
-| `TAVILY_API_KEY` | 去 [tavily.com](https://tavily.com) 註冊 | 用嚟做網頁搜尋 | 可選 |
-
-**填完之後嘅 `.env` 大概長咁：**
-
-```
-OPENCLAW_GATEWAY_TOKEN=my-secret-password-123
-TELEGRAM_BOT_TOKEN=7123456789:AAHxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-NVIDIA_INTEGRATE_API_KEY=nvapi-xxxxxxxxxxxxxxxxxxxxxxxx
-JINA_API_KEY=jina_xxxxxxxxxxxxxxxx
-```
-
-> 注意：`=` 後面直接貼 key，唔好加空格或引號。
-
----
-
-### Step 4：安裝 Skills
-
-Skills 就好似 App 咁，每個 skill 教識 agent 做一樣嘢。
-
-**方法 A — 用腳本：**
-
-```bash
-bash setup/install-skills.sh --all      # 安裝全部 34 個
-bash setup/install-skills.sh --check    # 檢查安裝結果
-```
-
-**方法 B — 用 OpenClaw prompt：**
-
-```
-幫我安裝所有 skills
-```
-
----
-
-### Step 5：連接 Messaging 平台
-
-#### 5a. 連接 Telegram
+#### 2a. 連接 Telegram
 
 **方法 A — 手動設定：**
 
@@ -367,7 +177,7 @@ bash setup/install-skills.sh --check    # 檢查安裝結果
 
 ---
 
-#### 5b. 連接 WhatsApp
+#### 2b. 連接 WhatsApp
 
 **方法 A — 手動設定：**
 
@@ -410,7 +220,7 @@ bash setup/install-skills.sh --check    # 檢查安裝結果
 
 ---
 
-#### 5c. 連接 WeChat（微信）
+#### 2c. 連接 WeChat（微信）
 
 WeChat 用社區 plugin 連接，透過 iPad 協議連接微信個人帳號。
 
@@ -454,6 +264,167 @@ openclaw start
 > - Plugin 詳情：https://github.com/icesword0760/openclaw-wechat
 
 ---
+
+### Step 3：設定 API Keys
+
+**方法 A — 手動編輯（傳統）：**
+
+```bash
+cp .env.example ~/.openclaw/.env
+chmod 600 ~/.openclaw/.env
+nano ~/.openclaw/.env
+```
+
+> `nano` 編輯完按 `Ctrl+O` 儲存，`Ctrl+X` 離開。
+
+**方法 B — 用 OpenClaw prompt（推薦唔熟 CLI 嘅人）：**
+
+```
+幫我設定 API keys。
+我有以下 key：
+- NVIDIA: nvapi-xxxxxxxx
+- Telegram Bot: 7123456789:AAHxxxxx
+- Gateway 密碼我想用: my-secret-123
+幫我寫入 .env
+```
+
+**你需要填邊啲 Key？**
+
+| Key 名稱 | 點樣攞 | 用途 | 一定要？ |
+|-----------|---------|------|----------|
+| `OPENCLAW_GATEWAY_TOKEN` | **自己揀一個密碼**（任意字串） | 用嚟登入 OpenClaw 網頁介面 | ✅ 必要 |
+| `TELEGRAM_BOT_TOKEN` | 喺 Telegram 搵 [@BotFather](https://t.me/BotFather)，輸入 `/newbot` | 用嚟連接 Telegram bot | ✅ 如果要用 Telegram |
+| `NVIDIA_..._API_KEY` | 去 [build.nvidia.com](https://build.nvidia.com) 註冊（免費） | 用嚟接入多款免費 AI 模型 | ✅ 推薦（免費） |
+| `JINA_API_KEY` | 去 [jina.ai](https://jina.ai) 註冊（免費） | 用嚟做長期記憶嘅向量搜尋 | 可選 |
+| `TAVILY_API_KEY` | 去 [tavily.com](https://tavily.com) 註冊 | 用嚟做網頁搜尋 | 可選 |
+
+**填完之後嘅 `.env` 大概長咁：**
+
+```
+OPENCLAW_GATEWAY_TOKEN=my-secret-password-123
+TELEGRAM_BOT_TOKEN=7123456789:AAHxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+NVIDIA_INTEGRATE_API_KEY=nvapi-xxxxxxxxxxxxxxxxxxxxxxxx
+JINA_API_KEY=jina_xxxxxxxxxxxxxxxx
+```
+
+> 注意：`=` 後面直接貼 key，唔好加空格或引號。
+
+---
+
+### Step 4：安裝 Skills
+
+Skills 就好似 App 咁，每個 skill 教識 agent 做一樣嘢。呢個 repo 包含 34 個預建 skill。
+
+#### 4a. 從 GitHub 下載 Skills
+
+```bash
+# Clone 呢個 repo（包含所有 skill 檔案）
+git clone https://github.com/radmanyeung/ford-openclaw-share.git ~/openclaw-setup-guide
+
+# 入去睇下有咩
+ls ~/openclaw-setup-guide/skills/
+```
+
+下載完之後，`skills/` 目錄結構：
+
+```
+~/openclaw-setup-guide/
+├── README.md                  ← 你而家睇緊嘅呢份
+├── skills-manifest.json       ← Skills 清單（分類 + 描述）
+├── setup/                     ← 安裝腳本 + 設定範例
+│   ├── install-skills.sh      ← 一鍵安裝腳本
+│   ├── .env.example           ← API key 範例檔
+│   └── openclaw-tunnel.ps1    ← Windows SSH tunnel 腳本
+└── skills/                    ← 34 個 skill 目錄
+    ├── tavily-search/
+    │   └── SKILL.md           ← Skill 定義檔
+    ├── memory-lancedb-pro/
+    │   ├── SKILL.md
+    │   └── refs/              ← 參考資料（部分 skill 有）
+    ├── workflow-orchestrator/
+    │   ├── SKILL.md
+    │   └── scripts/           ← 腳本（部分 skill 有）
+    └── ...
+```
+
+#### 4b. 安裝 Skills 到 OpenClaw
+
+**方法 A — 用腳本（推薦）：**
+
+```bash
+cd ~/openclaw-setup-guide
+bash setup/install-skills.sh --all      # 安裝全部 34 個
+bash setup/install-skills.sh --check    # 檢查安裝結果
+```
+
+**方法 B — 手動安裝單個 skill：**
+
+```bash
+# 將 skill 複製到 OpenClaw workspace
+cp -r ~/openclaw-setup-guide/skills/tavily-search ~/.openclaw/workspace/skills/
+
+# 或者用 symlink（方便日後 git pull 更新）
+ln -s ~/openclaw-setup-guide/skills/tavily-search ~/.openclaw/workspace/skills/tavily-search
+```
+
+**方法 C — 用 OpenClaw prompt：**
+
+```
+幫我安裝所有 skills
+```
+
+> **日後更新 Skills：** `cd ~/openclaw-setup-guide && git pull` 就會攞到最新版本。如果用咗 symlink，OpenClaw 會自動用到新版。
+
+---
+
+### Step 5：用 OpenClaw Prompt 完成設定
+
+如果你唔熟 CLI，可以直接喺 OpenClaw WebChat / Telegram 用自然語言叫 agent 幫你完成設定。
+
+> 前提：Step 1-4 已完成（OpenClaw 已安裝、至少連咗一個 messaging 平台或可以用 WebChat）。
+
+**設定 Agents：**
+
+```
+幫我建立一個叫 gpt 嘅 agent，用 nvidia 嘅 deepseek-r1 模型，角色係萬能通才
+```
+
+**設定 Model Providers：**
+
+```
+幫我加入 NVIDIA 做 model provider，API key 係 nvapi-xxxxxxxx
+```
+
+**設定 Memory Plugin：**
+
+```
+幫我安裝 memory-lancedb-pro plugin，啟用長期記憶功能
+```
+
+**設定 Cron Jobs（定時任務）：**
+
+```
+幫我設定一個每日早上 9 點嘅 cron job，用 main agent 生成日報，deliver 去 Telegram
+```
+
+**設定 Compaction（長對話壓縮）：**
+
+```
+幫我設定 compaction，128k model 用 30% reserve tokens
+```
+
+**一次過設定（進階）：**
+
+```
+幫我做完整 OpenClaw setup：
+- 加入 NVIDIA provider (key: nvapi-xxx)
+- 建立 3 個 agent: gpt (通才), gemini (創意), claude (coder)
+- 啟用 Telegram + WhatsApp
+- 安裝 memory plugin
+- 設定每日日報 cron job
+```
+
+> **提示：** Agent 嘅理解能力視乎你用嘅模型。用較強嘅模型（如 GPT-5、Gemini Pro、Claude Opus）會更準確咁完成設定。
 
 ---
 
