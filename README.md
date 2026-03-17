@@ -14,210 +14,90 @@
 
 ## 目錄
 
-**Part 1 — 常見問題排查（Debug 手冊）**
-- [常見問題排查](#常見問題排查debug-手冊)
+**Part 1 — 安裝 + 上手**
+- [Step 1：安裝 OpenClaw + 進入儀表板](#step-1安裝-openclaw--進入儀表板)
+- [Step 2：用 OpenClaw Prompt 完成設定](#step-2用-openclaw-prompt-完成設定)
+- [Step 3：設定 API Keys](#step-3設定-api-keys)
+- [Step 4：安裝 Skills](#step-4安裝-skills)
+- [Step 5：連接 Messaging 平台](#step-5連接-messaging-平台)
 
-**Part 2 — 用 OpenClaw Prompt 完成設定（唔使打指令）**
-- [Prompt 設定法](#用-openclaw-prompt-完成設定)
-
-**Part 3 — 完整安裝教學**
-- [你需要準備咩](#你需要準備咩)
-- [Step 1：下載 + 環境檢查](#step-1下載--環境檢查)
-- [Step 2：設定 API Keys](#step-2設定-api-keys)
-- [Step 3：安裝 Skills](#step-3安裝-skills)
-- [Step 4：連接 Messaging 平台](#step-4連接-messaging-平台)
-- [Step 5：驗證 + 測試](#step-5驗證--測試)
-
-**Part 4 — 進階設定 + 參考**
+**Part 2 — 進階設定 + 參考**
 - [設定模組（進階）](#設定模組進階)
 - [Skills 分類](#skills-分類)
 - [API Key 申請教學](#api-key-申請教學)
 - [從 Windows 連入 VPS](#從-windows-連入-vps)
 - [參考文檔](#參考文檔)
 
----
-
-# Part 1 — 常見問題排查（Debug 手冊）
-
-遇到問題先睇呢度。以下係實際運維中遇過嘅問題同解決方法。
-
-## Agent 完全無回應
-
-| 可能原因 | 點樣檢查 | 解決方法 |
-|----------|----------|----------|
-| OpenClaw 未啟動 | `openclaw status` | `openclaw start` |
-| 設定檔格式錯誤 | `openclaw config validate` | 修正 JSON 語法錯誤 |
-| `auth.json` 空或無效 | 檢查 `~/.openclaw/agents/<id>/agent/auth.json` | 從 `auth-profiles.json` 同步 token |
-| Agent 冇指定 model | 檢查 `openclaw.json` → `agents.defaults.model` | 確保有 `primary` model |
-| Bot token 錯 | 檢查 `~/.openclaw/.env` 嘅 token | 重新從 BotFather 攞 token |
-
-> **OpenClaw prompt：** `我個 agent 冇回應，幫我 debug`
-
-## OAuth Token 過期（Provider 認證失敗）
-
-**症狀：** Agent 回覆 401/403 錯誤，或者直接冇回應。
-
-**受影響 Provider：** Qwen Portal、OpenAI Codex 等用 OAuth 嘅 provider。
-
-```bash
-# 重新登入指定 provider
-openclaw models auth login --provider qwen-portal
-openclaw models auth login --provider openai-codex
-```
-
-> OAuth token 會定期過期（通常 2-4 週），需要手動刷新。建議設 cron job 提醒。
->
-> **OpenClaw prompt：** `幫我檢查所有 provider 嘅認證狀態`
-
-## Gateway 行緊但 CLI 命令 Hang 住
-
-**症狀：** `openclaw` 命令打咗之後冇反應（hang 超過 30 秒）。
-
-**原因：** Gateway 內部 RPC 通訊卡住。
-
-```bash
-# 重啟 gateway
-openclaw gateway restart
-```
-
-> **OpenClaw prompt：** `gateway 好似 hang 咗，幫我重啟`
-
-## Cron Job 冇執行 / Delivery 失敗
-
-| 問題 | 原因 | 解決 |
-|------|------|------|
-| Delivery 失敗 | 用咗 `"channel": "last"` | 改為 `"channel": "telegram", "to": "你的user_id"` |
-| Job 一直顯示 error | Gateway 之前出過事，狀態冇 reset | 等下次正常執行會自動清除 |
-| `announce` mode 唔 deliver | 已知 bug | 暫時改用 `log` mode + 手動檢查 |
-| SIGTERM 終止 | 執行時間太長被 kill | 簡化 job 內容或加大 timeout |
-
-```bash
-# 檢查 cron 健康狀態
-openclaw cron status
-
-# 手動觸發單個 job 測試
-openclaw cron run --id <job_id>
-```
-
-> **OpenClaw prompt：** `幫我檢查所有 cron job 嘅狀態，有冇 failed 嘅`
-
-## Session Context 爆滿（Token Overflow）
-
-**症狀：** Agent 回覆越嚟越慢，或者突然中斷。
-
-**原因：** Session token 用量超過 model 嘅 context window。
-
-**檢查：**
-```bash
-# 睇 session 大小
-openclaw sessions list --agent main
-```
-
-**解決：**
-```bash
-# Reset 指定 agent 嘅 session
-openclaw sessions reset --agent main
-```
-
-**預防 — 正確設定 compaction：**
-```jsonc
-// openclaw.json → agents.defaults.compaction
-"compaction": {
-  "mode": "safeguard",
-  "reserveTokens": 38400,       // context × 30%
-  "reserveTokensFloor": 20000   // 最低保留（唔好設成大過 model context！）
-}
-```
-
-> **踩過嘅坑：** `reserveTokensFloor` 設成 200000（大過 128k model context），導致 compaction 永遠唔觸發，session 膨脹到 500%+。
->
-> **OpenClaw prompt：** `幫我檢查所有 agent 嘅 session token 用量`
-
-## Gateway 版本不一致
-
-**症狀：** Dashboard 顯示嘅版本同 `openclaw --version` 唔同。
-
-**原因：** 同時存在全域安裝（`/usr/lib/`）同用戶級安裝（`~/.local/`）。
-
-```bash
-# 檢查邊度有安裝
-which openclaw
-ls /usr/lib/node_modules/openclaw/package.json
-ls ~/.local/lib/node_modules/openclaw/package.json 2>/dev/null
-
-# 如果有兩份，刪除用戶級安裝
-rm -rf ~/.local/lib/node_modules/openclaw ~/.local/bin/openclaw
-
-# 只保留全域安裝，更新用
-sudo npm update -g openclaw
-openclaw gateway restart
-```
-
-> **OpenClaw prompt：** `幫我檢查 openclaw 安裝路徑有冇衝突`
-
-## openclaw.json 啟動失敗（Unknown Key）
-
-**症狀：** `openclaw start` 報 schema validation error。
-
-**原因：** openclaw.json 有唔啱嘅 key（OpenClaw 用 strict JSON schema validation）。
-
-```bash
-# 驗證設定
-openclaw config validate
-
-# 對照官方文檔檢查 key 名
-# https://docs.openclaw.ai/gateway/configuration-reference
-```
-
-> **常見錯誤：** 打錯 key 名、用咗舊版本嘅 key、加咗 comment 但唔係 JSON5 格式。
-
-## WhatsApp / WeChat 斷線
-
-| 平台 | 原因 | 解決 |
-|------|------|------|
-| WhatsApp | 手機長時間離線 | `openclaw channels login --channel whatsapp` 重新掃 QR |
-| WeChat | Session 過期 / 被踢 | `openclaw plugins run @icesword760/openclaw-wechat login` 重新掃碼 |
-
-## Plugin 代碼改完冇生效
-
-**原因：** jiti 緩存咗舊嘅 TypeScript 編譯結果。
-
-```bash
-# 清 jiti 緩存（改完 .ts 檔案後必做）
-rm -rf /tmp/jiti/
-
-# 然後重啟
-openclaw gateway restart
-```
-
-> **注意：** 只改 config 唔使清 cache，只有改 `.ts` 源碼先要。
-
-## API Key 明文洩漏
-
-**症狀：** Key 直接寫喺 `models.json` 或 `openclaw.json`。
-
-**解決：** 所有 key 統一放 `~/.openclaw/.env`，設定檔用 `${ENV_VAR}` 引用。
-
-```bash
-# 檢查有冇明文 key
-grep -r "nvapi-\|jina_\|sk-\|bot[0-9]" ~/.openclaw/agents/*/agent/models.json
-
-# 替換為環境變數引用
-# "apiKey": "nvapi-xxx"  →  "apiKey": "${NVIDIA_INTEGRATE_API_KEY}"
-
-# 設嚴權限
-chmod 600 ~/.openclaw/.env
-```
-
-> **OpenClaw prompt：** `幫我掃描所有設定檔有冇明文 API key`
+**Part 3 — 常見問題 + 排查手冊**
+- [常見問題排查](#常見問題排查)
 
 ---
 
-# Part 2 — 用 OpenClaw Prompt 完成設定
+# Part 1 — 安裝 + 上手
 
-**唔識打指令？冇問題。** 裝好 OpenClaw 之後，你可以直接喺對話框（Telegram / WebChat / CLI）用以下 prompt 叫 agent 幫你完成設定。
+---
 
-> **前提：** 你需要先完成 [Part 3 Step 1](#step-1下載--環境檢查) 嘅基礎安裝（Node.js + OpenClaw + onboard）。之後嘅所有設定都可以用 prompt 完成。
+### Step 1：安裝 OpenClaw + 進入儀表板
+
+#### 1a. 安裝 Node.js + OpenClaw
+
+用 SSH 連入你嘅 Ubuntu 伺服器，然後逐行貼入：
+
+```bash
+# 安裝 Node.js 20
+curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+sudo apt-get install -y nodejs
+
+# 安裝 OpenClaw
+sudo npm install -g openclaw
+
+# 驗證
+openclaw --version    # 應顯示 2026.3.13 或更高
+```
+
+#### 1b. 初始化
+
+```bash
+openclaw onboard
+```
+
+精靈會問你幾個問題（名稱、Gateway 密碼等），跟住答就得。完成後會建立 `~/.openclaw/` 目錄同基礎設定。
+
+> **記住你設嘅 Gateway 密碼（`OPENCLAW_GATEWAY_TOKEN`）**，下一步要用。
+
+#### 1c. 啟動 + 進入閘道儀表板
+
+```bash
+openclaw start
+```
+
+**本機存取（SSH 直連嘅情況）：**
+
+打開瀏覽器去 `http://localhost:18789/`，用你喺 onboard 設嘅 Gateway token 登入。
+
+**遠端存取（從 Windows/Mac 連 VPS）：**
+
+先開 SSH tunnel，再用瀏覽器打開 `http://127.0.0.1:18789/`：
+
+```bash
+# 喺你嘅本地電腦（唔係 VPS）執行
+ssh -L 18789:localhost:18789 你的用戶名@你的VPS_IP
+```
+
+Windows 用 PowerShell 打同一條指令，或者用 `setup/openclaw-tunnel.ps1` 腳本。
+
+登入後你會見到 OpenClaw 閘道儀表板，可以：
+- 睇所有 agent 嘅狀態
+- 直接用 WebChat 同 agent 對話
+- 管理 sessions 同設定
+
+> 日後更新：`sudo npm update -g openclaw && openclaw gateway restart`
+
+---
+
+### Step 2：用 OpenClaw Prompt 完成設定
+
+**裝好之後，大部分設定可以直接喺儀表板 WebChat / Telegram / CLI 用 prompt 叫 agent 做。** 以下係常用 prompt，直接 copy 去用。
 
 ### 初始設定
 
@@ -340,76 +220,7 @@ openclaw config validate 有 error，幫我修
 
 ---
 
-# Part 3 — 完整安裝教學
-
-一步步教你喺 Ubuntu 上安裝 OpenClaw。
-
-## 你需要準備咩
-
-| 項目 | 說明 |
-|------|------|
-| **一部 Ubuntu 伺服器** | 可以係 VPS（雲端虛擬機）或本地 Linux 機。推薦 Ubuntu 22.04 或 24.04 |
-| **SSH 連線** | 你要識用終端機（Terminal）連入伺服器，Windows 可以用 PowerShell 或 PuTTY |
-| **基本終端機知識** | 識打指令、識 `cd`（進入資料夾）同 `ls`（列出檔案）就夠 |
-
----
-
-## 呢個 Repo 有咩
-
-```
-├── setup/                    # 設定工具
-│   ├── SKILL.md              # 互動式 setup skill（OpenClaw/Claude Code agent 用）
-│   ├── env-check.sh          # 環境檢查腳本（對比你嘅環境同參考設定）
-│   ├── install-skills.sh     # Skills 安裝腳本
-│   └── openclaw-tunnel.ps1   # Windows SSH 隧道腳本（從 Windows 連入 VPS）
-├── skills/                   # 34 個 OpenClaw Skills（10 分類）
-├── skills-manifest.json      # Skills 清單 + 分類索引
-├── .env.example              # API key 模板
-└── README.md
-```
-
----
-
-### Step 1：下載 + 環境檢查
-
-用 SSH 連入你嘅 Ubuntu 伺服器：
-
-```bash
-# 下載呢個 repo
-git clone https://github.com/radmanyeung/ford-openclaw-share.git
-cd ford-openclaw-share
-
-# 檢查環境
-bash setup/env-check.sh
-```
-
-腳本會逐項檢查 Node.js、npm、OpenClaw，顯示 ✅/⚠️/❌ 同修正指令。
-
-**裝 Node.js（如果未裝）：**
-
-```bash
-curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
-sudo apt-get install -y nodejs
-node --version    # v20.x.x 或更高
-```
-
-**裝 OpenClaw + 初始化：**
-
-```bash
-sudo npm install -g openclaw
-openclaw --version    # 2026.3.13 或更高
-openclaw onboard      # 互動式初始設定
-```
-
-`openclaw onboard` 會建立 `~/.openclaw/` 目錄同基礎設定。
-
-> 日後更新：`sudo npm update -g openclaw`
->
-> **或者用 OpenClaw prompt：** `幫我檢查環境同安裝缺少嘅組件`
-
----
-
-### Step 2：設定 API Keys
+### Step 3：設定 API Keys
 
 **方法 A — 手動編輯（傳統）：**
 
@@ -455,7 +266,7 @@ JINA_API_KEY=jina_xxxxxxxxxxxxxxxx
 
 ---
 
-### Step 3：安裝 Skills
+### Step 4：安裝 Skills
 
 Skills 就好似 App 咁，每個 skill 教識 agent 做一樣嘢。
 
@@ -474,9 +285,9 @@ bash setup/install-skills.sh --check    # 檢查安裝結果
 
 ---
 
-### Step 4：連接 Messaging 平台
+### Step 5：連接 Messaging 平台
 
-#### 4a. 連接 Telegram
+#### 5a. 連接 Telegram
 
 **方法 A — 手動設定：**
 
@@ -556,7 +367,7 @@ bash setup/install-skills.sh --check    # 檢查安裝結果
 
 ---
 
-#### 4b. 連接 WhatsApp
+#### 5b. 連接 WhatsApp
 
 **方法 A — 手動設定：**
 
@@ -599,7 +410,7 @@ bash setup/install-skills.sh --check    # 檢查安裝結果
 
 ---
 
-#### 4c. 連接 WeChat（微信）
+#### 5c. 連接 WeChat（微信）
 
 WeChat 用社區 plugin 連接，透過 iPad 協議連接微信個人帳號。
 
@@ -644,41 +455,9 @@ openclaw start
 
 ---
 
-### Step 5：驗證 + 測試
-
-```bash
-# 驗證設定
-openclaw config validate
-
-# 啟動
-openclaw start
-
-# 睇狀態
-openclaw status
-
-# TUI 介面
-openclaw tui
-```
-
-**測試方法：**
-
-| 方法 | 點做 |
-|------|------|
-| Telegram | DM 你嘅 bot，send 任何訊息 |
-| WhatsApp | DM 已連接嘅號碼 |
-| 微信 | Send 觸發關鍵詞（如「bot」） |
-| WebChat | 瀏覽器打開 `http://localhost:18789/`，用 Gateway token 登入 |
-| CLI | `openclaw chat` |
-
-**或者用 OpenClaw prompt：**
-
-```
-幫我驗證所有設定，檢查有冇問題
-```
-
 ---
 
-# Part 4 — 進階設定 + 參考
+# Part 2 — 進階設定 + 參考
 
 ## 設定模組（進階）
 
@@ -817,19 +596,165 @@ Setup Skill 包含 16 個獨立模組，你可以揀需要嘅跟：
 
 ---
 
-## 常見問題
+# Part 3 — 常見問題排查
 
-**Q: 我可以用自己嘅電腦（唔用 VPS）嗎？**
-A: 可以，只要係 Ubuntu Linux 就得。但如果要 24 小時運行（例如 Telegram bot 隨時回覆），建議用 VPS。
+實際運維中遇過嘅問題同解決方法。每個都附 OpenClaw prompt，可以直接 copy 去叫 agent 幫你修。
 
-**Q: 完全免費嗎？**
-A: OpenClaw 本身免費。AI 模型 API 有部分免費 tier（例如 NVIDIA NIM），用完免費額度先需要付費。VPS 需要租用費。
+---
 
-**Q: 我唔識 Linux，可以用嗎？**
-A: 基礎安裝需要 copy-paste 幾條指令。裝好之後，大部分設定可以透過 OpenClaw prompt 完成（見 [Part 2](#用-openclaw-prompt-完成設定)），唔使再打指令。
+### Agent 完全無回應
 
-**Q: 設定搞到一半可以停嗎？**
-A: 可以。每個步驟都係獨立嘅，你可以隨時停，下次繼續。
+| 可能原因 | 點樣檢查 | 解決方法 |
+|----------|----------|----------|
+| OpenClaw 未啟動 | `openclaw status` | `openclaw start` |
+| 設定檔格式錯誤 | `openclaw config validate` | 修正 JSON 語法錯誤 |
+| `auth.json` 空或無效 | 檢查 `~/.openclaw/agents/<id>/agent/auth.json` | 從 `auth-profiles.json` 同步 token |
+| Agent 冇指定 model | 檢查 `openclaw.json` → `agents.defaults.model` | 確保有 `primary` model |
+| Bot token 錯 | 檢查 `~/.openclaw/.env` 嘅 token | 重新從 BotFather 攞 token |
+
+> **OpenClaw prompt：** `我個 agent 冇回應，幫我 debug`
+
+---
+
+### OAuth Token 過期（Provider 認證失敗）
+
+**症狀：** Agent 回覆 401/403 錯誤，或者直接冇回應。
+
+**受影響 Provider：** Qwen Portal、OpenAI Codex 等用 OAuth 嘅 provider。
+
+```bash
+openclaw models auth login --provider qwen-portal
+openclaw models auth login --provider openai-codex
+```
+
+> OAuth token 通常 2-4 週過期，需要手動刷新。
+>
+> **OpenClaw prompt：** `幫我檢查所有 provider 嘅認證狀態`
+
+---
+
+### Gateway 行緊但 CLI 命令 Hang 住
+
+**症狀：** `openclaw` 命令 hang 超過 30 秒冇反應。
+
+```bash
+openclaw gateway restart
+```
+
+> **OpenClaw prompt：** `gateway 好似 hang 咗，幫我重啟`
+
+---
+
+### Cron Job 冇執行 / Delivery 失敗
+
+| 問題 | 原因 | 解決 |
+|------|------|------|
+| Delivery 失敗 | 用咗 `"channel": "last"` | 改為 `"channel": "telegram", "to": "你的user_id"` |
+| Job 一直顯示 error | Gateway 之前出過事，狀態冇 reset | 等下次正常執行會自動清除 |
+| `announce` mode 唔 deliver | 已知 bug | 暫時改用 `log` mode + 手動檢查 |
+| SIGTERM 終止 | 執行時間太長被 kill | 簡化 job 內容或加大 timeout |
+
+```bash
+openclaw cron status
+openclaw cron run --id <job_id>    # 手動觸發測試
+```
+
+> **OpenClaw prompt：** `幫我檢查所有 cron job 嘅狀態，有冇 failed 嘅`
+
+---
+
+### Session Context 爆滿（Token Overflow）
+
+**症狀：** Agent 回覆越嚟越慢，或者突然中斷。
+
+```bash
+openclaw sessions list --agent main    # 檢查
+openclaw sessions reset --agent main   # 重置
+```
+
+**預防 — 正確設定 compaction：**
+```jsonc
+// openclaw.json → agents.defaults.compaction
+"compaction": {
+  "mode": "safeguard",
+  "reserveTokens": 38400,       // context × 30%
+  "reserveTokensFloor": 20000   // 最低保留（唔好設成大過 model context！）
+}
+```
+
+> **踩過嘅坑：** `reserveTokensFloor` 設成 200000（大過 128k model context），compaction 永遠唔觸發，session 膨脹到 500%+。
+>
+> **OpenClaw prompt：** `幫我檢查所有 agent 嘅 session token 用量`
+
+---
+
+### Gateway 版本不一致
+
+**症狀：** Dashboard 顯示嘅版本同 `openclaw --version` 唔同。
+
+**原因：** 同時存在全域安裝（`/usr/lib/`）同用戶級安裝（`~/.local/`）。
+
+```bash
+which openclaw
+ls ~/.local/lib/node_modules/openclaw/package.json 2>/dev/null
+
+# 如果有兩份，刪除用戶級
+rm -rf ~/.local/lib/node_modules/openclaw ~/.local/bin/openclaw
+sudo npm update -g openclaw
+openclaw gateway restart
+```
+
+> **OpenClaw prompt：** `幫我檢查 openclaw 安裝路徑有冇衝突`
+
+---
+
+### openclaw.json 啟動失敗（Unknown Key）
+
+**症狀：** `openclaw start` 報 schema validation error。
+
+```bash
+openclaw config validate
+# 對照 https://docs.openclaw.ai/gateway/configuration-reference
+```
+
+> **常見錯誤：** 打錯 key 名、用咗舊版本嘅 key、加咗 comment 但唔係 JSON5 格式。
+
+---
+
+### WhatsApp / WeChat 斷線
+
+| 平台 | 原因 | 解決 |
+|------|------|------|
+| WhatsApp | 手機長時間離線 | `openclaw channels login --channel whatsapp` 重新掃 QR |
+| WeChat | Session 過期 / 被踢 | `openclaw plugins run @icesword760/openclaw-wechat login` 重新掃碼 |
+
+---
+
+### Plugin 代碼改完冇生效
+
+```bash
+# 清 jiti 緩存（改完 .ts 檔案後必做）
+rm -rf /tmp/jiti/
+openclaw gateway restart
+```
+
+> 只改 config 唔使清 cache，只有改 `.ts` 源碼先要。
+
+---
+
+### API Key 明文洩漏
+
+所有 key 應統一放 `~/.openclaw/.env`，設定檔用 `${ENV_VAR}` 引用。
+
+```bash
+# 掃描有冇明文 key
+grep -r "nvapi-\|jina_\|sk-\|bot[0-9]" ~/.openclaw/agents/*/agent/models.json
+
+# 設嚴權限
+chmod 600 ~/.openclaw/.env
+```
+
+> **OpenClaw prompt：** `幫我掃描所有設定檔有冇明文 API key`
 
 ---
 
