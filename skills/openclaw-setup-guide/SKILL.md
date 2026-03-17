@@ -864,6 +864,26 @@ openclaw start
 | Plugin 載入失敗 | 未安裝或路徑錯 | `openclaw plugin install xxx` |
 
 **參考文檔：**
-- https://docs.openclaw.ai/
-- https://docs.openclaw.ai/gateway/configuration-reference
-- https://docs.openclaw.ai/gateway/configuration-examples
+
+OpenClaw 官方：
+- 文檔首頁：https://docs.openclaw.ai/
+- Features 總覽：https://docs.openclaw.ai/concepts/features
+- 設定參考：https://docs.openclaw.ai/gateway/configuration-reference
+- 設定範例：https://docs.openclaw.ai/gateway/configuration-examples
+- 排查指南：https://docs.openclaw.ai/troubleshooting
+- GitHub：https://github.com/openclaw/openclaw
+- Discord：https://discord.gg/clawd
+
+Skills 同 Plugins：
+- ClawHub 市場：https://clawhub.ai
+- Skills 瀏覽：https://skills.sh/
+- memory-lancedb-pro：https://github.com/CortexReach/memory-lancedb-pro
+- Anthropic Skill Creator：https://github.com/anthropics/Skills/tree/main/Skills/skill-creator
+- obra/superpowers：https://github.com/obra/superpowers
+- awesome-claude-Skills：https://github.com/composiohq/awesome-claude-Skills
+
+社群教學：
+- OpenClaw Explained (Medium)：https://medium.com/@hasanmcse/openclaw-explained-features-real-world-use-cases-1ad115dd6578
+- Ultimate Guide (Reddit)：https://www.reddit.com/r/ThinkingDeeplyAI/comments/1qsoq4h/the_ultimate_guide_to_openclaw_formerly_clawdbot/
+
+完整參考清單見 README.md。
