@@ -46,7 +46,7 @@ version: 2.0.0
 
 用 `--skill NAME` 可以只同步單一 skill：
 ```bash
-~/.openclaw/scripts/repo-sync.sh --skill youtube-skill-generator
+~/.openclaw/scripts/repo-sync.sh --skill youtube-prompt-generator
 ```
 
 ### Step 2：確認變更內容
