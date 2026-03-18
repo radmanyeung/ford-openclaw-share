@@ -1,6 +1,6 @@
 ---
 name: youtube-prompt-generator
-description: Generate a reusable prompt from a YouTube tutorial video. Fetches transcript, analyses the tutorial content, extracts actionable steps, and produces a structured prompt file. Use when user says "make a prompt from this video", "turn this tutorial into a prompt", "用呢條片生成 prompt", or shares a YouTube URL with prompt-generation intent.
+description: Generate a reusable prompt from a YouTube tutorial video. Fetches transcript, analyses content, extracts actionable steps. Triggers on "提取prompt", "extract prompt", "生成prompt", "make a prompt from this video", "turn this tutorial into a prompt", "用呢條片生成 prompt", or any YouTube URL with prompt/提取 intent.
 tools: [Bash, Read, Edit, Write, Glob, Grep]
 ---
 
