@@ -1,5 +1,5 @@
 ---
-name: youtube-skill-generator
+name: youtube-prompt-generator
 description: Generate a reusable prompt from a YouTube tutorial video. Fetches transcript, analyses the tutorial content, extracts actionable steps, and produces a structured prompt file. Use when user says "make a prompt from this video", "turn this tutorial into a prompt", "用呢條片生成 prompt", or shares a YouTube URL with prompt-generation intent.
 tools: [Bash, Read, Edit, Write, Glob, Grep]
 ---

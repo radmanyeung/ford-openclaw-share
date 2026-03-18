@@ -88,7 +88,7 @@
       "skills": [
         "active-learning-node",
         "youtube-video-learner",
-        "youtube-skill-generator"
+        "youtube-prompt-generator"
       ]
     },
     "utility": {
@@ -256,8 +256,8 @@
       "hasScripts": true,
       "hasRefs": true
     },
-    "youtube-skill-generator": {
-      "description": "將 YouTube 教學影片轉換成可安裝嘅 OpenClaw/Claude Code skill",
+    "youtube-prompt-generator": {
+      "description": "將 YouTube 教學影片轉換成可重用嘅結構化 prompt",
       "hasScripts": false,
       "hasRefs": false
     },
