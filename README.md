@@ -39,19 +39,17 @@
 
 ### Step 1：安裝 OpenClaw + 進入儀表板
 
-#### 1a. 安裝 Node.js + OpenClaw
+#### 1a. 安裝 OpenClaw
 
-用 SSH 連入你嘅 Ubuntu 伺服器，然後逐行貼入：
+用 SSH 連入你嘅 Ubuntu 伺服器，貼入：
 
 ```bash
-# 安裝 Node.js 20
-curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
-sudo apt-get install -y nodejs
+curl -fsSL https://openclaw.ai/install.sh | bash
+```
 
-# 安裝 OpenClaw
-sudo npm install -g openclaw
+安裝腳本會自動處理所有依賴（包括 Node.js），完成後驗證：
 
-# 驗證
+```bash
 openclaw --version    # 應顯示 2026.3.13 或更高
 ```
 
@@ -91,7 +89,7 @@ Windows 用 PowerShell 打同一條指令，或者用 `setup/openclaw-tunnel.ps1
 - 直接用 WebChat 同 agent 對話
 - 管理 sessions 同設定
 
-> 日後更新：`sudo npm update -g openclaw && openclaw gateway restart`
+> 日後更新：`curl -fsSL https://openclaw.ai/install.sh | bash && openclaw gateway restart`
 
 ---
 
