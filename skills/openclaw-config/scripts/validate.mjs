@@ -17,7 +17,7 @@ export function loadConfig() {
   const paths = [
     path.join(__dirname, '..', '..', 'openclaw.json'),
     path.join(process.cwd(), 'openclaw.json'),
-    process.env.HOME + '/.openclaw/workspace/openclaw.json'
+    '/home/ubuntu/.openclaw/workspace/openclaw.json'
   ];
   
   for (const p of paths) {

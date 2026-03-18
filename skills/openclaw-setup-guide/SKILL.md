@@ -77,7 +77,7 @@ OpenClaw 設定模組 — 揀你要設定嘅（輸入數字，如 "1,2,3" 或 "a
 
 基礎設定：
  1. 環境變數 (.env)         — API keys 集中管理
- 2. Model Providers         — 設定 AI 模型來源（NVIDIA/Qwen/Jina）
+ 2. Model Providers         — 設定 AI 模型來源（NVIDIA/Poe/Qwen/Jina）
  3. Agents                  — 建立 AI agents（角色、模型、權限）
  4. 工具權限與 Hooks         — tool profiles + 內建 hooks
 
@@ -95,13 +95,8 @@ OpenClaw 設定模組 — 揀你要設定嘅（輸入數字，如 "1,2,3" 或 "a
 Skills：
 12. Skills 安裝             — 32 個 skill 分 10 類，揀需要嘅裝
 
-使用教學：
-13. OpenClaw CLI 基礎       — onboard / start / tui 常用指令
-14. Windows SSH 隧道        — 建立 .ps1 腳本連接 VPS
-15. 遠端 Web UI 存取        — 透過 SSH tunnel 用瀏覽器操作
-
 最後：
-16. 驗證與啟動              — 設定檢查 + 啟動 OpenClaw
+13. 驗證與啟動              — 設定檢查 + 啟動 OpenClaw
 ```
 
 ---
@@ -125,7 +120,7 @@ Skills：
 
 ### 4. 互動問答
 問用戶需要邊啲選項。例如：
-- Module 2：「你有邊啲 API key？(nvidia/jina/qwen)」
+- Module 2：「你有邊啲 API key？(nvidia/poe/jina/qwen)」
 - Module 3：「你想建幾多個 agent？每個嘅角色係咩？」
 - Module 7：「邊個 group 要限制存取？」
 
@@ -164,6 +159,8 @@ grep -oP '^[A-Z_]+(?==)' ~/.openclaw/.env 2>/dev/null
 | `NVIDIA_DEEPSEEK_AI_API_KEY` | DeepSeek via NVIDIA | 同上 |
 | `NVIDIA_QWEN_API_KEY` | Qwen via NVIDIA | 同上 |
 | `NVIDIA_Z_AI_API_KEY` | GLM via NVIDIA | 同上 |
+| `POE_OC_API_KEY` | Poe (需訂閱) | https://poe.com/api_key |
+| `POE_D_API_KEY` | Poe 第二個 key | 同上 |
 | `JINA_API_KEY` | Jina (memory plugin) | https://jina.ai |
 
 **可選 keys：**
@@ -212,6 +209,23 @@ for name, p in providers.items():
     "contextWindow": 128000,                   // 上下文長度
     "maxTokens": 8192                          // 最大輸出 tokens
   }]
+}
+```
+
+**Poe API（多模型聚合）：**
+```jsonc
+"poe OC": {
+  "baseUrl": "https://api.poe.com/v1",
+  "apiKey": "${POE_OC_API_KEY}",
+  "api": "openai-completions",
+  "models": [
+    // Poe 支援嘅模型 — 揀你想用嘅加
+    { "id": "claude-opus-4.6", "name": "Claude Opus 4.6", "input": ["text","image"], "contextWindow": 200000, "maxTokens": 8192 },
+    { "id": "claude-sonnet-4.6", "name": "Claude Sonnet 4.6", "input": ["text","image"], "contextWindow": 200000, "maxTokens": 8192 },
+    { "id": "gpt-5.3-codex", "name": "GPT-5.3-codex", "input": ["text","image"], "contextWindow": 200000, "maxTokens": 8192 },
+    { "id": "gemini-3.1-pro", "name": "Gemini 3.1 Pro", "input": ["text","image"], "contextWindow": 200000, "maxTokens": 8192 },
+    { "id": "minimax-m2.5", "name": "Minimax M2.5", "input": ["text","image"], "contextWindow": 128000, "maxTokens": 8192 }
+  ]
 }
 ```
 
@@ -651,198 +665,7 @@ bash ~/.claude/skills/openclaw-setup-guide/package-skills.sh
 
 ---
 
-### Module 13: OpenClaw CLI 基礎教學
-
-**用途：** 認識 OpenClaw 嘅常用 CLI 指令，等你識得操作同管理。
-
-**初始設定：**
-```bash
-openclaw onboard
-```
-第一次安裝後必須跑。佢會：
-- 建立 `~/.openclaw/` 目錄結構
-- 引導你設定基本 config（openclaw.json）
-- 設定第一個 channel（如 Telegram）
-
-**啟動 / 停止：**
-```bash
-openclaw start           # 啟動 OpenClaw（背景運行）
-openclaw stop            # 停止
-openclaw restart         # 重啟（改完 gateway 設定後必須）
-openclaw status          # 睇運行狀態
-```
-
-**TUI（終端介面）：**
-```bash
-openclaw tui
-```
-打開互動式終端介面，可以：
-- 即時同 agent 對話
-- 切換唔同 agent
-- 睇 session 歷史
-- 監控 agent 狀態
-
-TUI 快捷鍵：
-| 按鍵 | 功能 |
-|------|------|
-| `Tab` | 切換 agent |
-| `Ctrl+C` | 退出 TUI |
-| `/` | 輸入指令 |
-
-**設定管理：**
-```bash
-openclaw config validate          # 驗證 openclaw.json 格式
-openclaw config edit              # 編輯設定（會自動 hot-apply）
-```
-
-**Model 管理：**
-```bash
-openclaw models list              # 列出所有已設定嘅 model
-openclaw models auth login --provider qwen-portal   # OAuth 登入
-```
-
-**Cron 管理：**
-```bash
-openclaw cron list                # 列出所有定時任務
-openclaw cron add --name "xxx" --agent main --expr "0 1 * * *" --message "..."
-openclaw cron enable <job-id>     # 啟用
-openclaw cron disable <job-id>    # 停用
-```
-
-**Plugin 管理：**
-```bash
-openclaw plugin list              # 列出已安裝 plugin
-openclaw plugin install memory-lancedb-pro   # 安裝 plugin
-```
-
-**裝置配對：**
-```bash
-openclaw pair                     # 產生配對碼，俾手機/電腦 app 掃描
-```
-
-**Log 查看：**
-```bash
-openclaw logs                     # 睇即時 log
-openclaw logs --tail 50           # 睇最後 50 行
-```
-
----
-
-### Module 14: Windows SSH 隧道
-
-**用途：** 如果 OpenClaw 跑喺遠端 VPS（例如 Oracle Cloud），你需要建立 SSH tunnel 先可以喺本地電腦存取 Web UI。
-
-**概念解釋（向用戶說明）：**
-- OpenClaw Gateway 預設只聽 `127.0.0.1:18789`（loopback），外部無法直接存取
-- SSH tunnel 將本地電腦嘅 port 轉發去 VPS 嘅 port
-- 咁你就可以喺本地瀏覽器開 `http://127.0.0.1:18789/` 存取 OpenClaw
-
-**問用戶攞以下資料：**
-1. VPS IP 地址
-2. SSH 用戶名（通常 `ubuntu`）
-3. SSH key 路徑（Windows 通常 `C:\Users\你的用戶名\.ssh\id_ed25519` 或自訂名）
-4. OpenClaw Gateway port（預設 `18789`）
-
-**幫用戶建立 PowerShell 腳本（.ps1）：**
-
-根據用戶提供嘅資料，生成一個 `.ps1` 檔案：
-
-```powershell
-# openclaw-tunnel.ps1
-# OpenClaw SSH Tunnel — 連接到遠端 VPS
-# 用法：右鍵 → 用 PowerShell 執行，或喺終端機輸入 .\openclaw-tunnel.ps1
-
-# === 設定（改成你嘅資料）===
-$VPS_IP = "YOUR_VPS_IP"                              # VPS IP 地址
-$VPS_USER = "ubuntu"                                  # SSH 用戶名
-$SSH_KEY = "$env:USERPROFILE\.ssh\YOUR_KEY_NAME"      # SSH key 路徑
-$LOCAL_PORT = 18789                                    # 本地 port
-$REMOTE_PORT = 18789                                   # VPS 上嘅 OpenClaw port
-
-# === 連接 ===
-Write-Host "Connecting to OpenClaw on $VPS_IP..." -ForegroundColor Cyan
-Write-Host "Local:  http://127.0.0.1:$LOCAL_PORT/" -ForegroundColor Green
-Write-Host "Press Ctrl+C to disconnect" -ForegroundColor Yellow
-Write-Host ""
-
-ssh -N -L "${LOCAL_PORT}:127.0.0.1:${REMOTE_PORT}" -i $SSH_KEY "${VPS_USER}@${VPS_IP}"
-```
-
-**指導用戶儲存同執行：**
-
-1. 用記事本或 VS Code 建立檔案，貼上面嘅內容
-2. 儲存為 `openclaw-tunnel.ps1`（建議放喺桌面或常用位置）
-3. 修改入面嘅 `$VPS_IP`、`$SSH_KEY` 等變數
-4. 執行方式：
-   - 右鍵 `.ps1` 檔案 → 「用 PowerShell 執行」
-   - 或者打開 PowerShell 終端機，輸入 `.\openclaw-tunnel.ps1`
-
-**如果 PowerShell 唔俾執行 .ps1：**
-```powershell
-Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
-```
-
-**進階：開機自動連接**
-
-如果用戶想開機自動建立 tunnel，可以：
-1. 按 `Win+R`，輸入 `shell:startup`
-2. 建立一個 `openclaw-tunnel.vbs`：
-```vbs
-Set WshShell = CreateObject("WScript.Shell")
-WshShell.Run "powershell -WindowStyle Hidden -File ""C:\Users\你的用戶名\openclaw-tunnel.ps1""", 0, False
-```
-
----
-
-### Module 15: 遠端 Web UI 存取
-
-**用途：** 透過 SSH tunnel 喺瀏覽器操作 OpenClaw。
-
-**前提：** Module 14 嘅 SSH tunnel 已經連接。
-
-**步驟 1：打開瀏覽器**
-
-SSH tunnel 連接後，喺本地電腦嘅瀏覽器打開：
-```
-http://127.0.0.1:18789/
-```
-
-**步驟 2：輸入 Token**
-
-頁面會要求輸入 Gateway Token。呢個 token 就係 `.env` 入面嘅 `OPENCLAW_GATEWAY_TOKEN`。
-
-喺 VPS 上查看：
-```bash
-grep OPENCLAW_GATEWAY_TOKEN ~/.openclaw/.env | cut -d= -f2
-```
-
-**步驟 3：開始使用**
-
-登入後你可以：
-- 同任何 agent 對話
-- 睇所有 session 歷史
-- 管理 cron jobs
-- 監控系統狀態
-- 配對裝置（手機 app）
-
-**排查連線問題：**
-
-| 問題 | 原因 | 解決 |
-|------|------|------|
-| 瀏覽器打唔開 | SSH tunnel 未連接 | 確認 PowerShell 視窗仲開住 |
-| Connection refused | OpenClaw 未啟動 | 喺 VPS 跑 `openclaw start` |
-| 401 Unauthorized | Token 錯 | 檢查 `.env` 入面嘅 `OPENCLAW_GATEWAY_TOKEN` |
-| Port already in use | 本地 18789 被佔用 | 改 .ps1 嘅 `$LOCAL_PORT` 做其他 port |
-| SSH key denied | Key 唔啱 | 確認 `.ssh/` 入面嘅 key 名同 VPS authorized_keys 匹配 |
-
-**安全提醒：**
-- Gateway 設定 `"bind": "loopback"` 確保只有 SSH tunnel 可以存取
-- 唔好將 `bind` 改成 `0.0.0.0`，否則任何人都可以存取
-- Token 要設得夠強，建議 20+ 字元隨機字串
-
----
-
-### Module 16: 驗證與啟動
+### Module 13: 驗證與啟動
 
 **驗證：**
 ```bash
@@ -864,26 +687,6 @@ openclaw start
 | Plugin 載入失敗 | 未安裝或路徑錯 | `openclaw plugin install xxx` |
 
 **參考文檔：**
-
-OpenClaw 官方：
-- 文檔首頁：https://docs.openclaw.ai/
-- Features 總覽：https://docs.openclaw.ai/concepts/features
-- 設定參考：https://docs.openclaw.ai/gateway/configuration-reference
-- 設定範例：https://docs.openclaw.ai/gateway/configuration-examples
-- 排查指南：https://docs.openclaw.ai/troubleshooting
-- GitHub：https://github.com/openclaw/openclaw
-- Discord：https://discord.gg/clawd
-
-Skills 同 Plugins：
-- ClawHub 市場：https://clawhub.ai
-- Skills 瀏覽：https://skills.sh/
-- memory-lancedb-pro：https://github.com/CortexReach/memory-lancedb-pro
-- Anthropic Skill Creator：https://github.com/anthropics/Skills/tree/main/Skills/skill-creator
-- obra/superpowers：https://github.com/obra/superpowers
-- awesome-claude-Skills：https://github.com/composiohq/awesome-claude-Skills
-
-社群教學：
-- OpenClaw Explained (Medium)：https://medium.com/@hasanmcse/openclaw-explained-features-real-world-use-cases-1ad115dd6578
-- Ultimate Guide (Reddit)：https://www.reddit.com/r/ThinkingDeeplyAI/comments/1qsoq4h/the_ultimate_guide_to_openclaw_formerly_clawdbot/
-
-完整參考清單見 README.md。
+- https://docs.openclaw.ai/
+- https://docs.openclaw.ai/gateway/configuration-reference
+- https://docs.openclaw.ai/gateway/configuration-examples

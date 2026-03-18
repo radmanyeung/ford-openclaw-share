@@ -27,14 +27,14 @@ const cfgArg = getArg('--config');
 
 const defaultConfigCandidates = [
   cfgArg,
-  process.env.HOME + '/.openclaw/openclaw.json',
-  process.env.HOME + '/.openclaw/workspace/openclaw.json',
+  '/home/ubuntu/.openclaw/openclaw.json',
+  '/home/ubuntu/.openclaw/workspace/openclaw.json',
   path.join(os.homedir(), '.openclaw', 'openclaw.json'),
   path.join(os.homedir(), '.openclaw', 'workspace', 'openclaw.json'),
 ].filter(Boolean);
 
 const authProfileCandidates = [
-  process.env.HOME + '/.openclaw/agents/main/agent/auth-profiles.json',
+  '/home/ubuntu/.openclaw/agents/main/agent/auth-profiles.json',
   path.join(os.homedir(), '.openclaw', 'agents', 'main', 'agent', 'auth-profiles.json'),
 ];
 

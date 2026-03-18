@@ -22,14 +22,16 @@
 - [Step 4：安裝 Skills](#step-4安裝-skills)
 - [Step 5：用 OpenClaw Prompt 完成設定](#step-5用-openclaw-prompt-完成設定)
 
-**Part 2 — 進階設定 + 參考**
+**Part 2 — 進階設定**
 - [設定模組（進階）](#設定模組進階)
 - [Skills 分類](#skills-分類)
 - [API Key 申請教學](#api-key-申請教學)
-- [參考文檔](#參考文檔)
 
 **Part 3 — 常見問題 + 排查手冊**
 - [常見問題排查](#常見問題排查)
+
+**Part 4 — 參考文檔**
+- [參考文檔](#參考文檔)
 
 ---
 
@@ -971,70 +973,6 @@ Setup Skill 包含 16 個獨立模組，你可以揀需要嘅跟：
 
 ---
 
-## 參考文檔
-
-### OpenClaw 官方
-
-| 資源 | 說明 |
-|------|------|
-| [官方文檔](https://docs.openclaw.ai/) | 完整設定同使用文檔 |
-| [Features 總覽](https://docs.openclaw.ai/concepts/features) | 功能清單同概念介紹 |
-| [設定參考](https://docs.openclaw.ai/gateway/configuration-reference) | openclaw.json 所有欄位說明 |
-| [設定範例](https://docs.openclaw.ai/gateway/configuration-examples) | 常見設定範例 |
-| [Troubleshooting](https://docs.openclaw.ai/troubleshooting) | 常見問題排查 |
-| [GitHub Repo](https://github.com/openclaw/openclaw) | 源碼同 issue tracker |
-| [v2026.3.13 Release Notes](https://github.com/openclaw/openclaw/releases/tag/v2026.3.13-1) | 最新版本 changelog |
-| [Discord 社群](https://discord.gg/clawd) | 官方 Discord |
-
-### Skills 同 Plugin 資源
-
-| 資源 | 說明 |
-|------|------|
-| [ClawHub](https://clawhub.ai) | 官方 Skill 市場 |
-| [skills.sh](https://skills.sh/) | Skills 瀏覽同搜尋 |
-| [ClawHub Skill Schema](https://clawhub.com/schemas/skill/v1) | Skill 檔案格式定義 |
-| [Anthropic Skill Creator](https://github.com/anthropics/Skills/tree/main/Skills/skill-creator) | 官方 skill 建立工具 |
-| [obra/superpowers](https://github.com/obra/superpowers) | 開發流程 agentic skills（TDD、debug、parallel） |
-| [composiohq/awesome-claude-Skills](https://github.com/composiohq/awesome-claude-Skills) | 78+ SaaS 整合 skills |
-| [heilcheng/awesome-agent-Skills](https://github.com/heilcheng/awesome-agent-Skills) | Agent skills 目錄 |
-| [gotalab/skillport](https://github.com/gotalab/skillport) | Skill 分享平台 |
-| [muratcankoylan/Context-Engineering](https://github.com/muratcankoylan/Agent-Skills-for-Context-Engineering) | Context 管理 skills |
-
-### Memory Plugin (LanceDB)
-
-| 資源 | 說明 |
-|------|------|
-| [memory-lancedb-pro](https://github.com/CortexReach/memory-lancedb-pro) | Plugin 源碼 |
-| [Setup 教學影片 (YouTube)](https://youtu.be/MtukF1C8epQ) | memory-lancedb-pro 安裝同設定教學 |
-| [Setup Tools](https://github.com/CortexReach/toolbox/tree/main/memory-lancedb-pro-setup) | 設定輔助工具 |
-| [LanceDB](https://lancedb.com) | 向量資料庫官網 |
-| [xdylanbaker/memory-hygiene](https://github.com/xdylanbaker/memory-hygiene) | 記憶清理工具 |
-
-### AI Model Providers
-
-| Provider | 申請 Key | 文檔 |
-|----------|----------|------|
-| NVIDIA NIM | [build.nvidia.com](https://build.nvidia.com) | 免費 tier，多款模型 |
-| Jina AI | [jina.ai](https://jina.ai/api-key) | Embedding + Reranker |
-| Qwen Portal | [portal.qwen.ai](https://portal.qwen.ai) | OAuth 認證 |
-| OpenAI | [platform.openai.com](https://platform.openai.com/api-keys) | GPT 系列 |
-| Google Gemini | [ai.google.dev](https://ai.google.dev/) | Gemini 系列 |
-| SiliconFlow | [cloud.siliconflow.cn](https://cloud.siliconflow.cn/account/ak) | 國產模型聚合 |
-| DashScope | [dashscope.aliyuncs.com](https://dashscope.aliyuncs.com/) | 阿里雲 AI |
-| Ollama | [ollama.com](https://ollama.com/download) | 本地模型運行 |
-| Tavily | [tavily.com](https://tavily.com) | AI 搜尋 API |
-
-### 社群教學同文章
-
-| 資源 | 說明 |
-|------|------|
-| [OpenClaw Explained (Medium)](https://medium.com/@hasanmcse/openclaw-explained-features-real-world-use-cases-1ad115dd6578) | 功能同實際用例介紹 |
-| [Ultimate Guide (Reddit)](https://www.reddit.com/r/ThinkingDeeplyAI/comments/1qsoq4h/the_ultimate_guide_to_openclaw_formerly_clawdbot/) | 從安裝到安全管理嘅完整指南 |
-| [aivi.fyi](https://www.aivi.fyi) | Agent prompt engineering 指南 |
-| [win4r/AISuperDomain](https://github.com/win4r/AISuperDomain) | AI domain skill 整合 |
-
----
-
 # Part 3 — 常見問題排查
 
 實際運維中遇過嘅問題同解決方法。每個都附 OpenClaw prompt，可以直接 copy 去叫 agent 幫你修。
@@ -1194,6 +1132,73 @@ chmod 600 ~/.openclaw/.env
 ```
 
 > **OpenClaw prompt：** `幫我掃描所有設定檔有冇明文 API key`
+
+---
+
+---
+
+# Part 4 — 參考文檔
+
+## OpenClaw 官方
+
+| 資源 | 說明 |
+|------|------|
+| [官方文檔](https://docs.openclaw.ai/) | 完整設定同使用文檔 |
+| [OpenClaw Cases（實戰案例）](https://openclawcases.zeabur.app/) | 社群實戰案例同經驗分享 |
+| [Features 總覽](https://docs.openclaw.ai/concepts/features) | 功能清單同概念介紹 |
+| [設定參考](https://docs.openclaw.ai/gateway/configuration-reference) | openclaw.json 所有欄位說明 |
+| [設定範例](https://docs.openclaw.ai/gateway/configuration-examples) | 常見設定範例 |
+| [Troubleshooting](https://docs.openclaw.ai/troubleshooting) | 常見問題排查 |
+| [GitHub Repo](https://github.com/openclaw/openclaw) | 源碼同 issue tracker |
+| [v2026.3.13 Release Notes](https://github.com/openclaw/openclaw/releases/tag/v2026.3.13-1) | 最新版本 changelog |
+| [Discord 社群](https://discord.gg/clawd) | 官方 Discord |
+
+## Skills 同 Plugin 資源
+
+| 資源 | 說明 |
+|------|------|
+| [ClawHub](https://clawhub.ai) | 官方 Skill 市場 |
+| [skills.sh](https://skills.sh/) | Skills 瀏覽同搜尋 |
+| [ClawHub Skill Schema](https://clawhub.com/schemas/skill/v1) | Skill 檔案格式定義 |
+| [Anthropic Skill Creator](https://github.com/anthropics/Skills/tree/main/Skills/skill-creator) | 官方 skill 建立工具 |
+| [obra/superpowers](https://github.com/obra/superpowers) | 開發流程 agentic skills（TDD、debug、parallel） |
+| [composiohq/awesome-claude-Skills](https://github.com/composiohq/awesome-claude-Skills) | 78+ SaaS 整合 skills |
+| [heilcheng/awesome-agent-Skills](https://github.com/heilcheng/awesome-agent-Skills) | Agent skills 目錄 |
+| [gotalab/skillport](https://github.com/gotalab/skillport) | Skill 分享平台 |
+| [muratcankoylan/Context-Engineering](https://github.com/muratcankoylan/Agent-Skills-for-Context-Engineering) | Context 管理 skills |
+
+## Memory Plugin (LanceDB)
+
+| 資源 | 說明 |
+|------|------|
+| [memory-lancedb-pro](https://github.com/CortexReach/memory-lancedb-pro) | Plugin 源碼 |
+| [Setup 教學影片 (YouTube)](https://youtu.be/MtukF1C8epQ) | memory-lancedb-pro 安裝同設定教學 |
+| [Setup Tools](https://github.com/CortexReach/toolbox/tree/main/memory-lancedb-pro-setup) | 設定輔助工具 |
+| [LanceDB](https://lancedb.com) | 向量資料庫官網 |
+| [xdylanbaker/memory-hygiene](https://github.com/xdylanbaker/memory-hygiene) | 記憶清理工具 |
+
+## AI Model Providers
+
+| Provider | 申請 Key | 文檔 |
+|----------|----------|------|
+| NVIDIA NIM | [build.nvidia.com](https://build.nvidia.com) | 免費 tier，多款模型 |
+| Jina AI | [jina.ai](https://jina.ai/api-key) | Embedding + Reranker |
+| Qwen Portal | [portal.qwen.ai](https://portal.qwen.ai) | OAuth 認證 |
+| OpenAI | [platform.openai.com](https://platform.openai.com/api-keys) | GPT 系列 |
+| Google Gemini | [ai.google.dev](https://ai.google.dev/) | Gemini 系列 |
+| SiliconFlow | [cloud.siliconflow.cn](https://cloud.siliconflow.cn/account/ak) | 國產模型聚合 |
+| DashScope | [dashscope.aliyuncs.com](https://dashscope.aliyuncs.com/) | 阿里雲 AI |
+| Ollama | [ollama.com](https://ollama.com/download) | 本地模型運行 |
+| Tavily | [tavily.com](https://tavily.com) | AI 搜尋 API |
+
+## 社群教學同文章
+
+| 資源 | 說明 |
+|------|------|
+| [OpenClaw Explained (Medium)](https://medium.com/@hasanmcse/openclaw-explained-features-real-world-use-cases-1ad115dd6578) | 功能同實際用例介紹 |
+| [Ultimate Guide (Reddit)](https://www.reddit.com/r/ThinkingDeeplyAI/comments/1qsoq4h/the_ultimate_guide_to_openclaw_formerly_clawdbot/) | 從安裝到安全管理嘅完整指南 |
+| [aivi.fyi](https://www.aivi.fyi) | Agent prompt engineering 指南 |
+| [win4r/AISuperDomain](https://github.com/win4r/AISuperDomain) | AI domain skill 整合 |
 
 ---
 

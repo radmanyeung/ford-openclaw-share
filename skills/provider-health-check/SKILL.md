@@ -65,8 +65,8 @@ node skills/provider-health-check/scripts/test-providers.mjs --oauth-details
 ## Output Example
 
 ```
-Config: ~/.openclaw/openclaw.json
-Auth profiles: ~/.openclaw/agents/main/agent/auth-profiles.json
+Config: /home/ubuntu/.openclaw/openclaw.json
+Auth profiles: /home/ubuntu/.openclaw/agents/main/agent/auth-profiles.json
 FAIL qwen-portal  model=coder-model  (401/404) oauth=expired  empty response
      ↳ Re-login: openclaw models auth login --provider qwen-portal
 OK   nvidia-integrate  model=minimaxai/minimax-m2.1  via /chat/completions

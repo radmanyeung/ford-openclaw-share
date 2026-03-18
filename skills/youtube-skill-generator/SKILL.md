@@ -1,20 +1,20 @@
 ---
 name: youtube-skill-generator
-description: Generate an OpenClaw/Claude Code skill from a YouTube tutorial video. Fetches transcript, analyses the tutorial content, extracts actionable steps, and produces a complete skill directory (SKILL.md + scripts + references). Use when user says "make a skill from this video", "turn this tutorial into a skill", "用呢條片生成 skill", or shares a YouTube URL with skill-creation intent.
+description: Generate a reusable prompt from a YouTube tutorial video. Fetches transcript, analyses the tutorial content, extracts actionable steps, and produces a structured prompt file. Use when user says "make a prompt from this video", "turn this tutorial into a prompt", "用呢條片生成 prompt", or shares a YouTube URL with prompt-generation intent.
 tools: [Bash, Read, Edit, Write, Glob, Grep]
 ---
 
-# YouTube Skill Generator
+# YouTube Prompt Generator
 
-將 YouTube 教學影片自動轉換成可安裝嘅 OpenClaw / Claude Code skill。
+將 YouTube 教學影片自動轉換成可重用嘅結構化 prompt。
 
 ## 重要原則
 
-1. **一條片 = 一個 skill** — 每條影片生成一個獨立 skill
-2. **忠於原片** — skill 嘅內容要準確反映影片教嘅嘢，唔好自己加料
-3. **可執行** — 生成嘅 skill 要可以直接用，唔只係文字摘要
+1. **一條片 = 一個 prompt** — 每條影片生成一個獨立 prompt
+2. **忠於原片** — prompt 嘅內容要準確反映影片教嘅嘢，唔好自己加料
+3. **可執行** — 生成嘅 prompt 要可以直接用，唔只係文字摘要
 4. **逐步確認** — 每個階段都要用戶確認先繼續
-5. **用繁體中文溝通**，skill 內容按影片語言 + 用戶偏好決定
+5. **用繁體中文溝通**，prompt 內容按影片語言 + 用戶偏好決定
 
 ---
 
@@ -39,8 +39,8 @@ python3 ~/.openclaw/workspace/skills/youtube-video-learner/scripts/fetch-transcr
 
 睇完字幕後，判斷影片類型：
 
-| 類型 | 特徵 | Skill 重點 |
-|------|------|------------|
+| 類型 | 特徵 | Prompt 重點 |
+|------|------|-------------|
 | **工具教學** | 安裝/設定某個工具 | 環境檢查 + 安裝步驟 + 設定指引 |
 | **程式教學** | 寫 code / 用 API | 程式碼範例 + 依賴安裝 + 執行腳本 |
 | **概念講解** | 解釋原理/架構 | 知識摘要 + 實踐建議 + 參考連結 |
@@ -73,249 +73,136 @@ python3 ~/.openclaw/workspace/skills/youtube-video-learner/scripts/fetch-transcr
   • {n} 個工具/依賴
   • {n} 段指令/程式碼
 
-要根據呢啲內容生成 skill 嗎？
+要根據呢啲內容生成 prompt 嗎？
 ```
 
 ---
 
-### Phase 2: 設計 Skill 結構
+### Phase 2: 生成 Prompt
 
-**Step 2.1 — 決定 Skill 基本資料**
+根據 Phase 1 提取嘅資訊，生成以下固定結構嘅 prompt，直接回覆俾用戶：
 
-問用戶或自動推斷：
-- **Skill ID**：英文小寫 + 連字號（如 `docker-compose-setup`）
-- **Skill 名稱**：簡短描述
-- **觸發條件**：咩情況下 agent 應該自動觸發呢個 skill
+**Prompt 輸出模板：**
 
-**Step 2.2 — 決定輸出結構**
+````
+你是一位 AI 代理助手。你的任務是學習以下影片的完整內容，分析使用者當前環境與影片需求的差距，再等待使用者確認後幫助他建立環境並執行任務。
 
-根據影片類型決定要生成咩檔案：
-
-```
-{skill-id}/
-├── SKILL.md              # 必有：主 skill 定義
-├── scripts/              # 可選：如果影片有可執行嘅指令
-│   └── setup.sh          #   安裝/設定腳本
-│   └── check.sh          #   環境檢查腳本
-└── references/           # 可選：如果有額外參考資料
-    └── source-video.md   #   原片資訊同連結
-```
-
-**向用戶展示計劃，確認：**
-
-```
-📁 Skill 結構計劃：
-
-ID：{skill-id}
-目錄：~/.openclaw/workspace/skills/{skill-id}/
-檔案：
-  ✏️  SKILL.md — 主 skill（觸發條件 + 工作流程 + 步驟）
-  🔧 scripts/setup.sh — 自動安裝腳本
-  🔍 scripts/check.sh — 環境檢查腳本
-  📖 references/source-video.md — 原片資訊
-
-確認生成？
-```
+## 影片資訊
+- 標題：{影片標題}
+- 分類：{根據 Step 1.2 判斷嘅類型}
+- 摘要：{2-3 句描述影片內容，涵蓋主題、方法同目標}
 
 ---
 
-### Phase 3: 生成 Skill
+## 第一步：確認 Transcript 技能是否就緒
 
-**Step 3.1 — 生成 SKILL.md**
+嘗試使用 youtube-transcript-yt-dlp 技能取得以下影片的英文字幕（含時間戳記）。
 
-SKILL.md 必須包含以下結構：
+**如果技能尚未安裝，請向使用者說明（已安裝者可忽略此段）：**
 
-```markdown
----
-name: {skill-id}
-description: {一句描述，要包含觸發關鍵字}
-tools: [{需要嘅工具}]
----
+> 請在終端機執行以下指令安裝字幕技能：
+>
+> npx clawhub@latest install itzsubhadip/youtube-transcript-yt-dlp
+>
+> 安裝完成後，重新貼上這段 Prompt 即可繼續。
 
-# {Skill 名稱}
-
-{簡短描述，1-2 句}
-
-> 來源：[{影片標題}]({YouTube URL})
-
-## 前置條件
-
-- {condition_1}
-- {condition_2}
-
-## 環境檢查
-
-喺開始之前，檢查以下依賴：
-{用 bash 指令檢查每個工具是否已安裝}
-
-## 工作流程
-
-### Step 1: {step_title}
-{描述}
-```bash
-{command}
-```
-
-### Step 2: {step_title}
-...
-
-## 常見問題
-
-| 問題 | 解決方法 |
-|------|----------|
-| {issue} | {fix} |
-
-## 參考
-
-- 原片：{YouTube URL}
-- 官方文檔：{doc_url}
-```
-
-**SKILL.md 撰寫原則：**
-- `description` 要寫清楚觸發條件，等 agent 知幾時用
-- 步驟要具體到可以直接執行
-- 所有 command 要用 code block
-- 影片入面嘅 placeholder（如 `YOUR_API_KEY`）保留原樣
-- 加入環境檢查步驟，確保用戶環境就緒
-
-**Step 3.2 — 生成腳本（如果適用）**
-
-如果影片有多個安裝步驟，生成 `scripts/setup.sh`：
-
-```bash
-#!/usr/bin/env bash
-# Auto-generated from: {YouTube URL}
-# {影片標題}
-set -euo pipefail
-
-echo "=== {Skill Name} Setup ==="
-
-# Step 1: {description}
-echo "[1/N] {step}..."
-{command}
-
-# Step 2: {description}
-echo "[2/N] {step}..."
-{command}
-
-echo "✅ Setup complete!"
-```
-
-如果有需要檢查環境，生成 `scripts/check.sh`：
-
-```bash
-#!/usr/bin/env bash
-# Environment check for {skill-name}
-set -euo pipefail
-
-PASS=0; FAIL=0
-
-check() {
-  if command -v "$1" &>/dev/null; then
-    echo "  ✅ $1 ($(command -v $1))"
-    PASS=$((PASS+1))
-  else
-    echo "  ❌ $1 — 未安裝"
-    FAIL=$((FAIL+1))
-  fi
-}
-
-echo "環境檢查："
-check {tool_1}
-check {tool_2}
-
-echo ""
-echo "結果：✅ $PASS 通過  ❌ $FAIL 缺少"
-```
-
-**Step 3.3 — 生成 references/source-video.md**
-
-```markdown
-# 來源影片
-
-- **標題**：{title}
-- **URL**：{YouTube URL}
-- **長度**：{duration}
-- **語言**：{language}
-- **生成日期**：{date}
-
-## 影片重點時間戳
-
-- [00:00] {topic_1}
-- [02:30] {topic_2}
-- [05:15] {topic_3}
-
-## 影片提到嘅外部連結
-
-- {url_1} — {description}
-- {url_2} — {description}
-```
+若技能已就緒，直接進行下一步，不需顯示安裝說明。
 
 ---
 
-### Phase 4: 安裝同驗證
+## 第二步：取得字幕並翻譯分析
 
-**Step 4.1 — 寫入檔案**
+成功呼叫技能後：
 
-```bash
-mkdir -p ~/.openclaw/workspace/skills/{skill-id}/scripts
-mkdir -p ~/.openclaw/workspace/skills/{skill-id}/references
-```
+1. 優先取得**英文字幕**（若無英文字幕，改取任何可用語言）
+2. 將逐字稿全文翻譯成**繁體中文**
+3. 進行以下分析：
 
-將生成嘅檔案寫入。
+**A. 影片核心能力**
+條列 3–5 項「學完後你將能夠⋯⋯」的具體能力
 
-**Step 4.2 — 同步到 Claude Code**
+**B. 所需環境與工具清單**
+列出影片提到的所有工具、平台、API、套件及版本需求
 
-```bash
-# 如果有 skill-sync.sh
-~/.openclaw/scripts/skill-sync.sh 2>/dev/null || true
+**C. 環境差距分析**
+主動掃描使用者目前的環境（已安裝工具、現有設定），與 B 項清單逐一對照：
+- ✅ 已就緒的項目
+- ❌ 缺少或需要設定的項目
 
-# 手動建 symlink（如果冇 sync script）
-ln -sf ~/.openclaw/workspace/skills/{skill-id} ~/.claude/skills/{skill-id} 2>/dev/null || true
-```
+**D. 建議執行順序**
+根據差距分析，列出最短路徑的設定步驟
 
-**Step 4.3 — 驗證 SKILL.md 格式**
+---
 
-檢查：
-- frontmatter 有 `name` 同 `description`
-- `name` 同目錄名一致
-- `description` 包含觸發關鍵字
-- 腳本有 `#!/usr/bin/env bash` 同 `set -euo pipefail`
-- 腳本有執行權限
+## 第三步：提案並等待確認
 
-**Step 4.4 — 向用戶展示結果**
+完成分析後，向使用者呈現：
 
-```
-✅ Skill 生成完成！
+「我已讀完這支影片的完整內容。
 
-📁 ~/.openclaw/workspace/skills/{skill-id}/
-├── SKILL.md (XXX 行)
-├── scripts/setup.sh
-├── scripts/check.sh
-└── references/source-video.md
+**學完後你將具備的能力：**
+[列出 A]
 
-觸發方式：
-  • 話 agent「{trigger phrase}」
-  • 或者 /{skill-id}
+**環境差距分析：**
+[列出 C]
 
-來源：{YouTube URL}
-```
+**建議設定步驟：**
+[列出 D]
+
+請問要開始嗎？或者告訴我你想從哪個步驟切入。」
+
+---
+
+## 第四步：建立環境並執行任務
+
+使用者確認後，依步驟協助建立環境並執行任務。
+遇到需要使用者手動操作的步驟時，暫停說明並等待確認後再繼續。
+
+---
+
+影片來源：{YouTube URL}
+````
+
+**Prompt 撰寫原則：**
+- 影片資訊嘅摘要要忠於原片內容，唔好自己加料
+- 分類要根據 Step 1.2 嘅影片類型判斷結果填入
+- 摘要要涵蓋：教咩、點做、達到咩效果
+- 影片入面提到嘅所有工具、依賴都要反映喺「所需環境與工具清單」嘅預期輸出入面
+- 環境差距分析要涵蓋所有依賴，唔好遺漏
+- 保留原片嘅決策邏輯（「因為 X 所以做 Y」）
+
+---
+
+### Phase 3: 驗證同輸出
+
+**Step 3.1 — 驗證 Prompt 內容**
+
+喺輸出之前，自我檢查：
+- 影片資訊準確（標題、分類、摘要）
+- 摘要來自影片，冇自己加料
+- 模板結構完整（四個步驟齊全）
+- YouTube URL 正確填入
+- 冇洩漏 API key 或 secret
+- 環境檢查涵蓋所有依賴
+
+**Step 3.2 — 直接回覆用戶**
+
+將完整 prompt 內容直接輸出俾用戶，唔需要寫入檔案。用 markdown code block 包住成個 prompt，方便用戶直接複製。
 
 ---
 
 ## 品質檢查清單
 
-生成完 skill 後，自我檢查：
+生成完 prompt 後，自我檢查：
 
-- [ ] SKILL.md frontmatter 格式正確（name, description, tools）
-- [ ] description 有足夠嘅觸發關鍵字
-- [ ] 步驟按影片順序排列
-- [ ] 所有 command 都喺 code block 入面
-- [ ] 冇硬編碼嘅路徑（用 `~` 或 `$HOME`）
-- [ ] 冇洩漏 API key 或 secret
-- [ ] 腳本有正確嘅 shebang 同 error handling
-- [ ] 有返原片連結做參考
+- [ ] 影片標題正確
+- [ ] 分類合理（對應 Step 1.2 嘅影片類型）
+- [ ] 摘要忠於原片，冇自己加料
+- [ ] 四個步驟結構完整
 - [ ] 環境檢查涵蓋所有依賴
+- [ ] YouTube URL 正確填入（影片來源）
+- [ ] 冇洩漏 API key 或 secret
+- [ ] Prompt 可以直接複製貼上使用
 
 ---
 
@@ -323,5 +210,5 @@ ln -sf ~/.openclaw/workspace/skills/{skill-id} ~/.claude/skills/{skill-id} 2>/de
 
 - 字幕質素差嘅片可能影響提取準確度
 - 純視覺操作（冇口述步驟）嘅片會缺失資訊
-- 生成嘅 skill 需要用戶 review，唔好盲目信任
+- 生成嘅 prompt 需要用戶 review，唔好盲目信任
 - 影片入面嘅版本號可能過時，提醒用戶檢查

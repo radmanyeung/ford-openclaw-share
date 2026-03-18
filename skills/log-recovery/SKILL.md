@@ -28,7 +28,7 @@ Provides enhanced log recovery with structured logging format, error classificat
 {
   "skill": "log-recovery",
   "inputs": {
-    "log_directory": "~/.openclaw/logs",
+    "log_directory": "/home/ubuntu/.openclaw/logs",
     "error_level": "error",
     "checkpoint_interval": 100
   }

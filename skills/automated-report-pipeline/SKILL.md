@@ -233,7 +233,7 @@ templates:
 ### Daily Cron Job
 ```bash
 # Add to crontab
-0 8 * * * node ~/.openclaw/workspace/skills/automated-report-pipeline/scripts/report.mjs daily
+0 8 * * * node /home/ubuntu/.openclaw/workspace/skills/automated-report-pipeline/scripts/report.mjs daily
 ```
 
 ### Triggered Report
