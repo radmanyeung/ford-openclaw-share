@@ -286,7 +286,7 @@ WindTerm 係一個免費、開源、跨平台嘅 SSH 終端工具，速度快又
 
 ```bash
 # 喺本地電腦（唔係 VPS）執行
-ssh -L 18789:localhost:18789 你的用戶名@你的VPS_IP
+ssh -N -L 18789:127.0.0.1:18789 -i path/nameofkey vpsusername@vpsip
 ```
 
 連上 VPS 之後，就可以開始 Step 1 安裝 OpenClaw。
