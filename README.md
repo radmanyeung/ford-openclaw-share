@@ -346,6 +346,16 @@ openclaw start
 
 ### Step 2：連接 Messaging 平台
 
+> **乜係 Pairing（配對）？**
+> OpenClaw 用 pairing 機制控制邊個可以同你嘅 bot 對話。當 `dmPolicy` 設為 `"pairing"` 時，陌生人 DM 你嘅 bot 會收到一個 **8 位配對碼**，你需要喺 VPS 上批准先至可以開始對話。呢個機制確保只有你授權嘅人先用到你嘅 agent。
+>
+> 配對碼特性：
+> - 8 位大寫字母（排除咗容易混淆嘅 0/O/1/I）
+> - 1 小時內有效
+> - 每個 channel 預設最多 3 個待批准請求
+>
+> 參考文檔：[OpenClaw Pairing](https://docs.openclaw.ai/channels/pairing)
+
 #### 2a. 連接 Telegram
 
 **方法 A — 手動設定：**
@@ -358,21 +368,40 @@ openclaw start
 "channels": {
   "telegram": {
     "enabled": true,
-    "dmPolicy": "pairing",
-    "groupPolicy": "open",
+    "dmPolicy": "pairing",     // 需要配對先可以 DM
+    "groupPolicy": "open",     // Group 唔使配對
     "streaming": "partial"
   }
 }
 ```
 
-4. `openclaw start` → 喺 Telegram DM bot → 輸入配對碼
+4. 啟動 OpenClaw：
+   ```bash
+   openclaw start
+   ```
+
+5. **配對你嘅 Telegram 帳號：**
+   - 喺 Telegram DM 你嘅 bot，send 任何訊息
+   - Bot 會回覆一個 **8 位配對碼**（例如 `AXKF29TN`）
+   - 喺 VPS terminal 批准配對：
+     ```bash
+     # 查看待批准嘅配對請求
+     openclaw pairing list telegram
+
+     # 批准配對（輸入配對碼）
+     openclaw pairing approve telegram AXKF29TN
+     ```
+   - 批准後再 send 訊息，bot 就會正常回覆
 
 **方法 B — 用 OpenClaw prompt：**
 
+如果你已經完成配對、可以同 bot 對話：
+
 ```
 幫我設定 Telegram bot，我個 bot token 係 123456789:ABCdef...
-啟用之後幫我配對
 ```
+
+> **提示：** 第一次設定一定要用方法 A 完成配對，之後先可以用 prompt 叫 agent 幫你改設定。
 
 **搵你嘅 User ID：** 喺 Telegram 搵 **@userinfobot**，send 任何訊息就會回覆你嘅 ID。
 
@@ -434,7 +463,7 @@ openclaw start
    ```jsonc
    "whatsapp": {
      "enabled": true,
-     "dmPolicy": "pairing",
+     "dmPolicy": "pairing",     // 需要配對先可以 DM
      "groupPolicy": "open"
    }
    ```
@@ -443,13 +472,26 @@ openclaw start
    openclaw channels login --channel whatsapp
    ```
 3. 手機 WhatsApp → Settings → Linked Devices → 掃 QR code
-4. `openclaw start`
+4. 啟動：
+   ```bash
+   openclaw start
+   ```
+5. **配對你嘅 WhatsApp 帳號：**
+   - 用 WhatsApp DM 你嘅 bot，send 任何訊息
+   - Bot 會回覆 **8 位配對碼**
+   - 喺 VPS terminal 批准：
+     ```bash
+     openclaw pairing list whatsapp
+     openclaw pairing approve whatsapp 配對碼
+     ```
 
 **方法 B — 用 OpenClaw prompt：**
 
 ```
 幫我啟用 WhatsApp channel，然後幫我登入
 ```
+
+> **提示：** 同 Telegram 一樣，第一次要用方法 A 完成配對。
 
 **WhatsApp 支援：** 文字、圖片、影片、音頻、文件、已讀回條、Reaction、多帳號、Group 綁定。
 
