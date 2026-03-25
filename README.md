@@ -308,7 +308,7 @@ curl -fsSL https://openclaw.ai/install.sh | bash
 安裝腳本會自動處理所有依賴（包括 Node.js），完成後驗證：
 
 ```bash
-openclaw --version    # 應顯示 2026.3.13 或更高
+openclaw --version    # 應顯示 2026.3.23 或更高
 ```
 
 #### 1b. 初始化
@@ -1192,7 +1192,7 @@ chmod 600 ~/.openclaw/.env
 | [設定範例](https://docs.openclaw.ai/gateway/configuration-examples) | 常見設定範例 |
 | [Troubleshooting](https://docs.openclaw.ai/troubleshooting) | 常見問題排查 |
 | [GitHub Repo](https://github.com/openclaw/openclaw) | 源碼同 issue tracker |
-| [v2026.3.13 Release Notes](https://github.com/openclaw/openclaw/releases/tag/v2026.3.13-1) | 最新版本 changelog |
+| [v2026.3.23 Release Notes](https://github.com/openclaw/openclaw/releases/tag/v2026.3.23-2) | 最新版本 changelog |
 | [Discord 社群](https://discord.gg/clawd) | 官方 Discord |
 
 ## Skills 同 Plugin 資源
