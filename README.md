@@ -25,7 +25,7 @@
 **Part 2 — 進階設定**
 - [設定模組（進階）](#設定模組進階)
 - [Skills 分類](#skills-分類)
-- [API Key 申請教學](#api-key-申請教學)
+- [AI Model Providers + API Keys](#ai-model-providers--api-keys)
 
 **Part 3 — 常見問題 + 排查手冊**
 - [常見問題排查](#常見問題排查)
@@ -1011,19 +1011,26 @@ Setup Skill 包含 16 個獨立模組，你可以揀需要嘅跟：
 
 ---
 
-## API Key 申請教學
+## AI Model Providers + API Keys
+
+OpenClaw 透過 Provider 連接唔同嘅 AI 模型。每個 Provider 需要一個 API Key，統一存喺 `~/.openclaw/.env`，設定檔用 `${ENV_VAR}` 引用。
 
 > NVIDIA 嘅詳細申請 + 設定教學見 [Step 3a](#3a-完整示範nvidia-nim免費推薦新手)。
 
-| Provider | 點樣申請 | `.env` Key 名稱 | 備註 |
-|----------|----------|-----------------|------|
-| NVIDIA NIM | [build.nvidia.com](https://build.nvidia.com) → 登入 → 任何模型頁 → Get API Key | `NVIDIA_INTEGRATE_API_KEY` | 免費，推薦新手，詳見 Step 3a |
-| Jina | [jina.ai](https://jina.ai) → 註冊 → Dashboard → API Keys | `JINA_API_KEY` | 免費 tier，memory plugin 用 |
-| Telegram Bot | Telegram app 搵 [@BotFather](https://t.me/BotFather) → `/newbot` → 跟指示 | `TELEGRAM_BOT_TOKEN` | 即時拎到 token |
-| Tavily | [tavily.com](https://tavily.com) → 註冊 → Dashboard → API Key | `TAVILY_API_KEY` | 可選，網頁搜尋用 |
-| Qwen Portal | [portal.qwen.ai](https://portal.qwen.ai) → 註冊 → OAuth 登入 | OAuth 認證 | 需定期 `openclaw models auth login --provider qwen-portal` |
-| xAI (Grok) | [console.x.ai](https://console.x.ai/) → 註冊 → API Keys | `XAI_API_KEY` | Grok 推理模型 |
-| OpenRouter | [openrouter.ai](https://openrouter.ai/keys) → 註冊 → API Keys | `OPENROUTER_API_KEY` | 免費 tier 聚合多模型 |
+| Provider | 申請 Key | `.env` Key 名稱 | 模型例子 | 費用 |
+|----------|----------|-----------------|----------|------|
+| NVIDIA NIM | [build.nvidia.com](https://build.nvidia.com) → 登入 → Get API Key | `NVIDIA_INTEGRATE_API_KEY` | DeepSeek V3、MiniMax M2.5、Qwen、GLM5 | 免費 ✅ |
+| xAI | [console.x.ai](https://console.x.ai/) → API Keys | `XAI_API_KEY` | Grok 4.20 Reasoning | 免費 tier |
+| OpenRouter | [openrouter.ai](https://openrouter.ai/keys) → API Keys | `OPENROUTER_API_KEY` | 多模型聚合（免費 tier） | 免費 tier |
+| Jina AI | [jina.ai](https://jina.ai) → Dashboard → API Keys | `JINA_API_KEY` | Embedding + Reranker（Memory 用） | 免費 tier |
+| SiliconFlow | [cloud.siliconflow.cn](https://cloud.siliconflow.cn/account/ak) | `SILICONFLOW_API_KEY` | BGE Reranker（Memory 用） | 免費 tier |
+| Qwen Portal | [portal.qwen.ai](https://portal.qwen.ai) → OAuth 登入 | OAuth 認證 | Qwen Coder / Vision | 免費（需定期 `openclaw models auth login`） |
+| Poe | [poe.com/api/keys](https://poe.com/api/keys) | `POE_API_KEY` | Claude、GPT、Gemini、MiniMax（轉售） | 付費（按 points） |
+| Tavily | [tavily.com](https://tavily.com) → API Key | `TAVILY_API_KEY` | AI 網頁搜尋 | 免費 tier |
+| Telegram Bot | Telegram [@BotFather](https://t.me/BotFather) → `/newbot` | `TELEGRAM_BOT_TOKEN` | — | 免費 |
+| OpenAI | [platform.openai.com](https://platform.openai.com/api-keys) | `OPENAI_API_KEY` | GPT 系列 | 付費 |
+| Google Gemini | [ai.google.dev](https://ai.google.dev/) | `GOOGLE_API_KEY` | Gemini 系列 | 免費 tier |
+| Ollama | [ollama.com](https://ollama.com/download) | 本地運行，唔使 key | 本地模型 | 免費 |
 
 ---
 
@@ -1221,31 +1228,71 @@ chmod 600 ~/.openclaw/.env
 | [gotalab/skillport](https://github.com/gotalab/skillport) | Skill 分享平台 |
 | [muratcankoylan/Context-Engineering](https://github.com/muratcankoylan/Agent-Skills-for-Context-Engineering) | Context 管理 skills |
 
-## Memory Plugin (LanceDB)
+## Memory System
+
+OpenClaw 用兩個互補嘅系統管理記憶同對話歷史：
+
+### memory-lancedb-pro（長期記憶）
+
+跨 session 嘅永久知識庫，所有 agent 共用。對話中自動提取重要資訊，之後嘅對話可以 recall。
+
+```
+寫入 → Smart Extraction (LLM) → Jina Embedding → LanceDB (向量 DB)
+查詢 → Hybrid Search (Vector 70% + BM25 30%) → Reranker → 結果
+```
+
+**特點：**
+- **自動提取**：對話中自動用 LLM 提取重要事實、決策、偏好
+- **Hybrid Retrieval**：Vector similarity + BM25 keyword 混合搜尋
+- **Cross-encoder Rerank**：用 BGE Reranker 精排結果
+- **Noise Filter**：自動過濾低質素記憶
+- **Recency Decay**：新記憶自動加權（半衰期 14 日）
+
+**Agent Tools：** `memory_store`、`memory_recall`、`memory_forget`、`memory_stats`
 
 | 資源 | 說明 |
 |------|------|
 | [memory-lancedb-pro](https://github.com/CortexReach/memory-lancedb-pro) | Plugin 源碼 |
-| [Setup 教學影片 (YouTube)](https://youtu.be/MtukF1C8epQ) | memory-lancedb-pro 安裝同設定教學 |
+| [Setup 教學影片 (YouTube)](https://youtu.be/MtukF1C8epQ) | 安裝同設定教學 |
 | [Setup Tools](https://github.com/CortexReach/toolbox/tree/main/memory-lancedb-pro-setup) | 設定輔助工具 |
 | [LanceDB](https://lancedb.com) | 向量資料庫官網 |
 | [xdylanbaker/memory-hygiene](https://github.com/xdylanbaker/memory-hygiene) | 記憶清理工具 |
 
-## AI Model Providers
+### lossless-claw（Context Engine — 無損對話壓縮）
 
-| Provider | 申請 Key | 文檔 |
-|----------|----------|------|
-| NVIDIA NIM | [build.nvidia.com](https://build.nvidia.com) | 免費 tier，多款模型 |
-| Jina AI | [jina.ai](https://jina.ai/api-key) | Embedding + Reranker |
-| Qwen Portal | [portal.qwen.ai](https://portal.qwen.ai) | OAuth 認證 |
-| OpenAI | [platform.openai.com](https://platform.openai.com/api-keys) | GPT 系列 |
-| Google Gemini | [ai.google.dev](https://ai.google.dev/) | Gemini 系列 |
-| SiliconFlow | [cloud.siliconflow.cn](https://cloud.siliconflow.cn/account/ak) | 國產模型聚合 |
-| DashScope | [dashscope.aliyuncs.com](https://dashscope.aliyuncs.com/) | 阿里雲 AI |
-| xAI (Grok) | [console.x.ai](https://console.x.ai/) | Grok 推理模型 |
-| OpenRouter | [openrouter.ai](https://openrouter.ai/) | 模型聚合（免費 tier） |
-| Ollama | [ollama.com](https://ollama.com/download) | 本地模型運行 |
-| Tavily | [tavily.com](https://tavily.com) | AI 搜尋 API |
+取代 OpenClaw 內建嘅 sliding-window compaction。將舊訊息用 LLM 摘要成 DAG 結構，保留所有原始訊息喺 SQLite，agent 可以隨時展開回溯。
+
+```
+對話增長 → 超過 context 75% → 觸發 compaction
+  舊訊息 → Leaf Summary (depth 0) → Condensed Summary (depth 1+)
+  最近 32 條訊息保持原樣（freshTail）
+
+Context Assembly 每次回覆：
+  [condensed summaries] + [leaf summaries] + [32 raw messages]
+```
+
+**特點：**
+- **無損**：原始訊息永久保存喺 SQLite，只係用摘要做 context
+- **DAG 結構**：多層摘要樹，自動 condense
+- **CJK 優化**：Enhanced fork 修正咗中文 token 計算（上游低估 6 倍）
+- **Agent Tools**：`lcm_grep`（全文搜尋）、`lcm_expand`（展開摘要）、`lcm_describe`（結構描述）
+
+| 資源 | 說明 |
+|------|------|
+| [lossless-claw（上游）](https://github.com/Martian-Engineering/lossless-claw) | 原版 plugin |
+| [lossless-claw-enhanced](https://github.com/win4r/lossless-claw-enhanced) | CJK 優化 fork（推薦中文用戶） |
+| [LCM 論文](https://papers.voltropy.com/LCM) | Lossless Context Management 論文 |
+| [教學影片 (YouTube)](https://youtu.be/m21PNaIW3N4) | 安裝、設定、內部原理 |
+| [教學影片 (Bilibili)](https://www.bilibili.com/video/BV1MKXQBRE9d/) | 同上（B 站） |
+
+### 兩者嘅關係
+
+| | memory-lancedb-pro | lossless-claw |
+|---|---|---|
+| **用途** | 記住「咩」（事實、決策、偏好） | 記住「點傾」（對話歷史） |
+| **儲存** | LanceDB 向量資料庫 | SQLite |
+| **範圍** | 跨 session，所有 agent 共用 | Per-session |
+| **需要 API Key** | `JINA_API_KEY`（embedding）+ `SILICONFLOW_API_KEY`（rerank） | 唔需要（用現有 model） |
 
 ## 社群教學同文章
 
