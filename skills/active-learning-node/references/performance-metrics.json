@@ -1,7 +1,48 @@
 {
   "version": "2.0.0",
-  "updated": "2026-03-15T20:30:09Z",
+  "updated": "2026-03-22T20:30:02Z",
   "source": "tsls-auto-observe",
-  "observation_count": 170,
-  "metrics": []
+  "observation_count": 246,
+  "metrics": [
+  {
+    "task_type": "memory_management",
+    "total": 164,
+    "success": 68,
+    "failure": 9,
+    "avg_tokens": 12782,
+    "avg_messages": 11
+  },
+  {
+    "task_type": "general",
+    "total": 40,
+    "success": 24,
+    "failure": 3,
+    "avg_tokens": 7585,
+    "avg_messages": 7
+  },
+  {
+    "task_type": "research",
+    "total": 38,
+    "success": 33,
+    "failure": 3,
+    "avg_tokens": 4162,
+    "avg_messages": 4
+  },
+  {
+    "task_type": "creation",
+    "total": 2,
+    "success": 0,
+    "failure": 0,
+    "avg_tokens": 2302,
+    "avg_messages": 3
+  },
+  {
+    "task_type": "debugging",
+    "total": 2,
+    "success": 0,
+    "failure": 0,
+    "avg_tokens": 2440,
+    "avg_messages": 3
+  }
+]
 }

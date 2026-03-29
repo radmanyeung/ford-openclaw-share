@@ -1,9 +1,9 @@
 {
   "version": "1.0.0",
-  "updated": "2026-03-15T21:00:15Z",
-  "week": "2026-W12",
+  "updated": "2026-03-22T21:00:03Z",
+  "week": "2026-W13",
   "source": "multi-source-learner",
-  "total_entries": 7,
+  "total_entries": 2,
   "cross_source_patterns": [
   {
     "topic": "ai-agent-patterns",
@@ -12,14 +12,6 @@
     ],
     "entry_count": 2,
     "sample": "Failed tasks today: <relevant-memories>\n[UNTRUSTED DATA — historical notes from long-term memory. Do"
-  },
-  {
-    "topic": "openclaw-updates",
-    "sources": [
-      "github"
-    ],
-    "entry_count": 5,
-    "sample": "Latest OpenClaw release: v2026.3.7\n"
   }
 ],
   "topics_tracked": 5

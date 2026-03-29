@@ -1,5 +1,5 @@
 {
-  "version": "2026-03-18",
+  "version": "2026-03-29",
   "description": "OpenClaw Skills 清單 — 分類同描述，用於 setup guide 安裝",
   "categories": {
     "core": {
@@ -21,6 +21,7 @@
       "requires": ["JINA_API_KEY"],
       "skills": [
         "memory-lancedb-pro",
+        "memory-lancedb-pro-skill",
         "memory-hygiene",
         "context-manager"
       ]
@@ -84,9 +85,10 @@
     },
     "learning": {
       "label": "學習與進化",
-      "description": "自我學習、影片學習",
+      "description": "自我學習、影片學習、Context 工程",
       "skills": [
         "active-learning-node",
+        "context-engineering",
         "youtube-video-learner",
         "youtube-prompt-generator"
       ]
@@ -135,6 +137,11 @@
       "hasScripts": false,
       "hasRefs": true,
       "source": "CortexReach/memory-lancedb-pro-skill"
+    },
+    "memory-lancedb-pro-skill": {
+      "description": "memory-lancedb-pro 使用指南同最佳實踐",
+      "hasScripts": false,
+      "hasRefs": false
     },
     "memory-hygiene": {
       "description": "LanceDB 記憶清理同優化",
@@ -250,6 +257,11 @@
       "description": "Session 模式學習同自我改進",
       "hasScripts": true,
       "hasRefs": true
+    },
+    "context-engineering": {
+      "description": "Context 壓縮、摘要、對話歷史優化",
+      "hasScripts": false,
+      "hasRefs": false
     },
     "youtube-video-learner": {
       "description": "YouTube 影片學習（字幕提取 + 結構化分析）",

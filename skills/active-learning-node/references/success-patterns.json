@@ -1,6 +1,117 @@
 {
   "version": "2.0.0",
-  "updated": "2026-03-15T20:30:09Z",
+  "updated": "2026-03-22T20:30:02Z",
   "source": "tsls-observations",
-  "patterns": []
+  "patterns": [
+  {
+    "id": "succ-exec",
+    "tools": [
+      "exec"
+    ],
+    "task_types": [
+      "general",
+      "memory_management",
+      "research"
+    ],
+    "count": 85,
+    "avg_tokens": 2949,
+    "last_seen": "2026-03-22T19:03:11Z"
+  },
+  {
+    "id": "succ-exec-read",
+    "tools": [
+      "exec",
+      "read"
+    ],
+    "task_types": [
+      "general",
+      "memory_management",
+      "research"
+    ],
+    "count": 13,
+    "avg_tokens": 14802,
+    "last_seen": "2026-03-22T13:17:27Z"
+  },
+  {
+    "id": "succ-exec-process",
+    "tools": [
+      "exec",
+      "process"
+    ],
+    "task_types": [
+      "memory_management",
+      "research"
+    ],
+    "count": 8,
+    "avg_tokens": 3072,
+    "last_seen": "2026-03-14T16:02:19Z"
+  },
+  {
+    "id": "succ-exec-process-read",
+    "tools": [
+      "exec",
+      "process",
+      "read"
+    ],
+    "task_types": [
+      "memory_management"
+    ],
+    "count": 8,
+    "avg_tokens": 8176,
+    "last_seen": "2026-03-19T07:06:32Z"
+  },
+  {
+    "id": "succ-cron-exec",
+    "tools": [
+      "cron",
+      "exec"
+    ],
+    "task_types": [
+      "general",
+      "memory_management",
+      "research"
+    ],
+    "count": 6,
+    "avg_tokens": 33171,
+    "last_seen": "2026-03-22T04:01:49Z"
+  },
+  {
+    "id": "succ-cron",
+    "tools": [
+      "cron"
+    ],
+    "task_types": [
+      "memory_management"
+    ],
+    "count": 3,
+    "avg_tokens": 29443,
+    "last_seen": "2026-03-22T07:07:32Z"
+  },
+  {
+    "id": "succ-",
+    "tools": [],
+    "task_types": [
+      "general"
+    ],
+    "count": 1,
+    "avg_tokens": 2372,
+    "last_seen": "2026-03-21T16:00:57Z"
+  },
+  {
+    "id": "succ-edit-exec-read-session_status-write",
+    "tools": [
+      "edit",
+      "exec",
+      "read",
+      "session_status",
+      "write"
+    ],
+    "task_types": [
+      "memory_management"
+    ],
+    "count": 1,
+    "avg_tokens": 102559,
+    "last_seen": "2026-03-21T22:06:01Z"
+  }
+]
 }

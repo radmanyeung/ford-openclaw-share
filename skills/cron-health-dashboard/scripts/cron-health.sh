@@ -14,7 +14,8 @@ CMD="${1:-report}"
 shift || true
 
 fetch_cron_list() {
-  openclaw cron list --json 2>/dev/null | awk '/^\{/,0' || echo '{"jobs":[]}'
+  # Strip ANSI color codes from plugin debug output before extracting JSON
+  openclaw cron list --json 2>/dev/null | sed 's/\x1b\[[0-9;]*m//g' | awk '/^\{/,0' || echo '{"jobs":[]}'
 }
 
 parse_and_report() {
@@ -62,9 +63,9 @@ parse_and_report() {
     fi
   done
   
-  local STUCK=${#STUCK_JOBS[@]}
-  local FAILED=${#FAILED_JOBS[@]}
-  local OK=${#OK_JOBS[@]}
+  local STUCK="${#STUCK_JOBS[@]}"
+  local FAILED="${#FAILED_JOBS[@]}"
+  local OK="${#OK_JOBS[@]}"
   local TOTAL=$OK
   
   # Output Telegram-friendly format
@@ -73,13 +74,13 @@ parse_and_report() {
   echo "| Status | Job |"
   echo "|--------|-----|"
   
-  for job in "${OK_JOBS[@]}"; do
+  for job in ${OK_JOBS[@]+"${OK_JOBS[@]}"}; do
     echo "| ✅ | $job |"
   done
-  for job in "${STUCK_JOBS[@]}"; do
+  for job in ${STUCK_JOBS[@]+"${STUCK_JOBS[@]}"}; do
     echo "| ⚠️ stuck | $job |"
   done
-  for job in "${FAILED_JOBS[@]}"; do
+  for job in ${FAILED_JOBS[@]+"${FAILED_JOBS[@]}"}; do
     echo "| ❌ failed | $job |"
   done
   
@@ -112,7 +113,7 @@ case "$CMD" in
     DAYS="${1:-7}"
     echo "=== Cron History (last $DAYS days) ==="
     [[ ! -d "$REFS_DIR/history" ]] && echo "No history" && exit 0
-    find "$REFS_DIR/history" -name "*.json" -mtime -"$DAYS" 2>/dev/null | sort | while read -f; do
+    find "$REFS_DIR/history" -name "*.json" -mtime -"$DAYS" 2>/dev/null | sort | while read -r f; do
       basename "$f" .json
     done
     ;;

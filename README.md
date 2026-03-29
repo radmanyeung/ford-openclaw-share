@@ -6,7 +6,7 @@
 
 呢個 Guide 包含：
 - 一步步教你安裝同設定
-- 34 個預建 Skills（等於 agent 嘅技能包）
+- 36 個預建 Skills（等於 agent 嘅技能包）
 - 環境檢查工具（自動幫你睇缺咩）
 - 互動式 agent 引導（裝好之後可以用 AI 幫你設定）
 
@@ -308,7 +308,7 @@ curl -fsSL https://openclaw.ai/install.sh | bash
 安裝腳本會自動處理所有依賴（包括 Node.js），完成後驗證：
 
 ```bash
-openclaw --version    # 應顯示 2026.3.23 或更高
+openclaw --version    # 應顯示 2026.3.24 或更高
 ```
 
 #### 1b. 初始化
@@ -340,7 +340,7 @@ openclaw start
 - 直接用 WebChat 同 agent 對話
 - 管理 sessions 同設定
 
-> 日後更新：`curl -fsSL https://openclaw.ai/install.sh | bash && openclaw gateway restart`
+> 日後更新：`sudo npm update -g openclaw && openclaw gateway restart`
 
 ---
 
@@ -744,6 +744,7 @@ build.nvidia.com    NVIDIA_INTEGRATE_      openclaw.json 嘅           agent 嘅
 | `NVIDIA_INTEGRATE_API_KEY` | 去 [build.nvidia.com](https://build.nvidia.com) 註冊 → Get API Key | 接入免費 AI 模型（見上面 3a 詳細教學） | ✅ 推薦（免費） |
 | `JINA_API_KEY` | 去 [jina.ai](https://jina.ai) 註冊（免費） | Memory plugin 嘅向量搜尋 | 可選 |
 | `TAVILY_API_KEY` | 去 [tavily.com](https://tavily.com) 註冊 | 網頁搜尋功能 | 可選 |
+| `XAI_API_KEY` | 去 [x.ai](https://console.x.ai/) 註冊 | Grok 推理模型 | 可選 |
 
 **填完之後嘅 `.env` 大概長咁：**
 
@@ -752,6 +753,7 @@ OPENCLAW_GATEWAY_TOKEN=my-secret-password-123
 TELEGRAM_BOT_TOKEN=7123456789:AAHxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 NVIDIA_INTEGRATE_API_KEY=nvapi-xxxxxxxxxxxxxxxxxxxxxxxx
 JINA_API_KEY=jina_xxxxxxxxxxxxxxxx
+XAI_API_KEY=xai-xxxxxxxxxxxxxxxx
 ```
 
 ---
@@ -834,7 +836,7 @@ API Key 值：nvapi-yyyyyyyyyyyy
 
 ### Step 4：安裝 Skills
 
-Skills 就好似 App 咁，每個 skill 教識 agent 做一樣嘢。呢個 repo 包含 34 個預建 skill。
+Skills 就好似 App 咁，每個 skill 教識 agent 做一樣嘢。呢個 repo 包含 36 個預建 skill。
 
 #### 4a. 從 GitHub 下載 Skills
 
@@ -874,7 +876,7 @@ ls ~/openclaw-setup-guide/skills/
 
 ```bash
 cd ~/openclaw-setup-guide
-bash setup/install-skills.sh --all      # 安裝全部 34 個
+bash setup/install-skills.sh --all      # 安裝全部 36 個
 bash setup/install-skills.sh --check    # 檢查安裝結果
 ```
 
@@ -921,6 +923,14 @@ ln -s ~/openclaw-setup-guide/skills/tavily-search ~/.openclaw/workspace/skills/t
 ```
 幫我安裝 memory-lancedb-pro plugin，啟用長期記憶功能
 ```
+
+**設定 Context Engine（Lossless Claw）：**
+
+```
+幫我安裝 lossless-claw plugin，啟用無損 context 壓縮
+```
+
+> Lossless Claw 可以喺唔損失資訊嘅情況下壓縮 context，慳 token 之餘保持回答質素。
 
 **設定 Cron Jobs（定時任務）：**
 
@@ -982,19 +992,19 @@ Setup Skill 包含 16 個獨立模組，你可以揀需要嘅跟：
 
 ## Skills 分類
 
-34 個 Skills 分為 10 類：
+36 個 Skills 分為 10 類：
 
 | 分類 | 數量 | 做咩用 | 需要 API Key？ |
 |------|------|--------|----------------|
 | **core** | 7 | OpenClaw 系統管理同設定 | 唔需要 |
-| **memory** | 3 | AI 長期記憶（記得之前講過咩） | 需要 `JINA_API_KEY` |
+| **memory** | 4 | AI 長期記憶（記得之前講過咩） | 需要 `JINA_API_KEY` |
 | **monitoring** | 4 | 自動監控、日報週報、log 管理 | 唔需要 |
 | **skills-mgmt** | 6 | Skill 搜尋、審計、版本管理 | 唔需要 |
 | **workflow** | 3 | 多步驟任務自動化 | 唔需要 |
 | **research** | 3 | AI 網頁搜尋同深度研究 | 需要 `TAVILY_API_KEY` |
 | **data** | 2 | JSON/YAML 檔案驗證同修復 | 唔需要 |
 | **integration** | 2 | 多個 API 整合 + 自動報告 | 唔需要 |
-| **learning** | 3 | 自我學習 + YouTube 影片學習 + 影片轉 Skill | 唔需要 |
+| **learning** | 4 | 自我學習 + YouTube 影片學習 + Context 工程 | 唔需要 |
 | **utility** | 1 | 天氣查詢 | 唔需要 |
 
 完整清單見 [`skills-manifest.json`](skills-manifest.json)。
@@ -1012,6 +1022,8 @@ Setup Skill 包含 16 個獨立模組，你可以揀需要嘅跟：
 | Telegram Bot | Telegram app 搵 [@BotFather](https://t.me/BotFather) → `/newbot` → 跟指示 | `TELEGRAM_BOT_TOKEN` | 即時拎到 token |
 | Tavily | [tavily.com](https://tavily.com) → 註冊 → Dashboard → API Key | `TAVILY_API_KEY` | 可選，網頁搜尋用 |
 | Qwen Portal | [portal.qwen.ai](https://portal.qwen.ai) → 註冊 → OAuth 登入 | OAuth 認證 | 需定期 `openclaw models auth login --provider qwen-portal` |
+| xAI (Grok) | [console.x.ai](https://console.x.ai/) → 註冊 → API Keys | `XAI_API_KEY` | Grok 推理模型 |
+| OpenRouter | [openrouter.ai](https://openrouter.ai/keys) → 註冊 → API Keys | `OPENROUTER_API_KEY` | 免費 tier 聚合多模型 |
 
 ---
 
@@ -1192,7 +1204,7 @@ chmod 600 ~/.openclaw/.env
 | [設定範例](https://docs.openclaw.ai/gateway/configuration-examples) | 常見設定範例 |
 | [Troubleshooting](https://docs.openclaw.ai/troubleshooting) | 常見問題排查 |
 | [GitHub Repo](https://github.com/openclaw/openclaw) | 源碼同 issue tracker |
-| [v2026.3.23 Release Notes](https://github.com/openclaw/openclaw/releases/tag/v2026.3.23-2) | 最新版本 changelog |
+| [v2026.3.24 Release Notes](https://github.com/openclaw/openclaw/releases/tag/v2026.3.24) | 最新版本 changelog |
 | [Discord 社群](https://discord.gg/clawd) | 官方 Discord |
 
 ## Skills 同 Plugin 資源
@@ -1230,6 +1242,8 @@ chmod 600 ~/.openclaw/.env
 | Google Gemini | [ai.google.dev](https://ai.google.dev/) | Gemini 系列 |
 | SiliconFlow | [cloud.siliconflow.cn](https://cloud.siliconflow.cn/account/ak) | 國產模型聚合 |
 | DashScope | [dashscope.aliyuncs.com](https://dashscope.aliyuncs.com/) | 阿里雲 AI |
+| xAI (Grok) | [console.x.ai](https://console.x.ai/) | Grok 推理模型 |
+| OpenRouter | [openrouter.ai](https://openrouter.ai/) | 模型聚合（免費 tier） |
 | Ollama | [ollama.com](https://ollama.com/download) | 本地模型運行 |
 | Tavily | [tavily.com](https://tavily.com) | AI 搜尋 API |
 
