@@ -19,11 +19,90 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import crypto from 'crypto';
+import { spawn } from 'child_process';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const WORKFLOWS_DIR = path.join(__dirname, '..', 'workflows');
 const RUNS_DIR = path.join(__dirname, '..', 'runs');
 const LOGS_DIR = path.join(__dirname, '..', 'logs');
+const OPENCLAW_BIN = process.env.OPENCLAW_BIN || 'openclaw';
+
+function resolveTemplate(value, ctx) {
+  if (value == null) return value;
+  if (Array.isArray(value)) return value.map(v => resolveTemplate(v, ctx));
+  if (typeof value === 'object') {
+    const out = {};
+    for (const [k, v] of Object.entries(value)) out[k] = resolveTemplate(v, ctx);
+    return out;
+  }
+  if (typeof value !== 'string') return value;
+  return value.replace(/\$\{([^}]+)\}/g, (_, pathExpr) => {
+    const parts = pathExpr.trim().split('.');
+    // Strict check: referencing steps.X.output requires X to have completed.
+    // Silent empty fallback here was causing agents to hallucinate when upstream steps failed/skipped.
+    if (parts[0] === 'steps' && parts.length >= 3 && parts[2] === 'output') {
+      const stepId = parts[1];
+      const stepResult = ctx.steps?.[stepId];
+      if (stepResult && stepResult.status !== 'completed') {
+        throw new Error(`Template references steps.${stepId}.output but step status is '${stepResult.status}'`);
+      }
+      if (!stepResult) {
+        throw new Error(`Template references steps.${stepId}.output but step has not run yet`);
+      }
+    }
+    let cur = ctx;
+    for (const p of parts) {
+      if (cur == null) return '';
+      cur = cur[p];
+    }
+    if (cur == null) return '';
+    return typeof cur === 'string' ? cur : JSON.stringify(cur);
+  });
+}
+
+const AGENT_MSG_MAX = 120_000;
+function truncateForArgv(s) {
+  if (typeof s !== 'string' || s.length <= AGENT_MSG_MAX) return s;
+  const keep = 40_000;
+  return s.slice(0, keep) + `\n\n... [truncated ${s.length - 2 * keep} chars to fit argv limit] ...\n\n` + s.slice(-keep);
+}
+
+function runOpenclawAgent(agentId, message, timeoutSec, verbose) {
+  return new Promise((resolve) => {
+    const safeMsg = truncateForArgv(message);
+    if (verbose && safeMsg !== message) console.log(`   ✂ message truncated ${message.length} → ${safeMsg.length} chars`);
+    const args = ['agent', '--agent', agentId, '--json', '--message', safeMsg];
+    if (timeoutSec) args.push('--timeout', String(timeoutSec));
+    if (verbose) console.log(`   ▶ ${OPENCLAW_BIN} agent --agent ${agentId} --json --message <${message.length} chars>`);
+    const child = spawn(OPENCLAW_BIN, args, { stdio: ['ignore', 'pipe', 'pipe'] });
+    let stdout = '', stderr = '';
+    const killTimer = timeoutSec ? setTimeout(() => child.kill('SIGTERM'), (timeoutSec + 30) * 1000) : null;
+    child.stdout.on('data', d => stdout += d.toString());
+    child.stderr.on('data', d => stderr += d.toString());
+    child.on('close', (code) => {
+      if (killTimer) clearTimeout(killTimer);
+      if (code !== 0) return resolve({ ok: false, error: `openclaw exit ${code}: ${stderr.trim() || stdout.trim()}` });
+      const raw = stdout.trim();
+      try {
+        const j = JSON.parse(raw);
+        const payloads = j?.result?.payloads;
+        if (Array.isArray(payloads) && payloads.length) {
+          const texts = payloads.map(p => p?.text).filter(t => typeof t === 'string' && t.length);
+          if (texts.length) return resolve({ ok: true, output: texts.join('\n\n') });
+        }
+        const reply = j.reply || j.message || j.output || j.content || j.text;
+        if (typeof reply === 'string') return resolve({ ok: true, output: reply });
+        return resolve({ ok: true, output: JSON.stringify(j) });
+      } catch {
+        return resolve({ ok: true, output: raw });
+      }
+    });
+    child.on('error', (err) => {
+      if (killTimer) clearTimeout(killTimer);
+      resolve({ ok: false, error: `spawn failed: ${err.message}` });
+    });
+  });
+}
 
 // Ensure directories exist
 [WORKFLOWS_DIR, RUNS_DIR, LOGS_DIR].forEach(dir => {
@@ -40,9 +119,10 @@ function parseArgs() {
     workflow: null,
     runId: null,
     dryRun: false,
-    verbose: false
+    verbose: false,
+    inputs: {}
   };
-  
+
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
     if (arg === '--action' && args[i + 1]) config.action = args[++i];
@@ -50,8 +130,13 @@ function parseArgs() {
     else if (arg === '--run-id' && args[i + 1]) config.runId = args[++i];
     else if (arg === '--dry-run') config.dryRun = true;
     else if (arg === '--verbose' || arg === '-v') config.verbose = true;
+    else if (arg === '--input' && args[i + 1]) {
+      const kv = args[++i];
+      const idx = kv.indexOf('=');
+      if (idx > 0) config.inputs[kv.slice(0, idx)] = kv.slice(idx + 1);
+    }
   }
-  
+
   return config;
 }
 
@@ -126,23 +211,30 @@ function getExecutionOrder(steps) {
 /**
  * Execute a single step
  */
-async function executeStep(step, runId, verbose) {
+async function executeStep(step, runId, verbose, ctx) {
   const startTime = Date.now();
   let result = { status: 'pending' };
-  
+
   if (verbose) {
     console.log(`   🔄 Executing: ${step.name} (${step.id})`);
   }
-  
+
   try {
     result.status = 'running';
-    
+
     switch (step.type) {
-      case 'shell':
-        // Simulate shell command
+      case 'shell': {
+        const command = resolveTemplate(step.command, ctx);
+        const stepEnv = step.env ? resolveTemplate(step.env, ctx) : {};
         const { exec } = await import('child_process');
-        await new Promise((resolve, reject) => {
-          exec(step.command, { cwd: __dirname }, (error, stdout, stderr) => {
+        await new Promise((resolve) => {
+          exec(command, {
+            cwd: __dirname,
+            env: { ...process.env, ...stepEnv },
+            maxBuffer: 16 * 1024 * 1024,
+            timeout: step.timeout ? step.timeout * 1000 : undefined,
+            shell: '/bin/bash'
+          }, (error, stdout, stderr) => {
             result.output = stdout || stderr;
             if (error) {
               result.status = 'failed';
@@ -154,13 +246,38 @@ async function executeStep(step, runId, verbose) {
           });
         });
         break;
-        
-      case 'agent':
-        // Placeholder for agent execution
-        result.output = `[Agent: ${step.agent}] ${JSON.stringify(step.params)}`;
+      }
+
+      case 'write-report': {
+        const outPath = resolveTemplate(step.path, ctx);
+        const content = resolveTemplate(step.content, ctx);
+        const expanded = outPath.startsWith('~/') ? path.join(process.env.HOME || '', outPath.slice(2)) : outPath;
+        fs.mkdirSync(path.dirname(expanded), { recursive: true });
+        fs.writeFileSync(expanded, content);
         result.status = 'completed';
+        result.output = `Saved: ${expanded} (${content.length} chars)`;
         break;
-        
+      }
+
+      case 'agent': {
+        if (!step.agent) {
+          result.status = 'failed';
+          result.error = 'agent step missing "agent" field';
+          break;
+        }
+        const params = step.params ? resolveTemplate(step.params, ctx) : {};
+        const message = params.task || params.message || params.prompt || JSON.stringify(params);
+        const ac = await runOpenclawAgent(step.agent, message, step.timeout, verbose);
+        if (ac.ok) {
+          result.status = 'completed';
+          result.output = ac.output;
+        } else {
+          result.status = 'failed';
+          result.error = ac.error;
+        }
+        break;
+      }
+
       default:
         result.status = 'completed';
         result.output = `Step ${step.id} completed`;
@@ -169,7 +286,32 @@ async function executeStep(step, runId, verbose) {
     result.status = 'failed';
     result.error = error.message;
   }
-  
+
+  // Semantic assertions — evaluated only if the step technically completed.
+  // Lets workflows reject agent outputs that indicate refusal/invalid response.
+  if (step.assert && result.status === 'completed' && typeof result.output === 'string') {
+    const out = result.output;
+    const failAssert = (msg) => { result.status = 'failed'; result.error = `Assertion failed: ${msg}`; };
+    if (Array.isArray(step.assert.notContains)) {
+      for (const needle of step.assert.notContains) {
+        if (out.includes(needle)) { failAssert(`output contains forbidden phrase "${needle}"`); break; }
+      }
+    }
+    if (result.status === 'completed' && Array.isArray(step.assert.contains)) {
+      for (const needle of step.assert.contains) {
+        if (!out.includes(needle)) { failAssert(`output missing required phrase "${needle}"`); break; }
+      }
+    }
+    if (result.status === 'completed' && typeof step.assert.matches === 'string') {
+      try {
+        if (!new RegExp(step.assert.matches).test(out)) failAssert(`output did not match regex /${step.assert.matches}/`);
+      } catch (e) { failAssert(`invalid regex: ${e.message}`); }
+    }
+    if (result.status === 'completed' && typeof step.assert.minLength === 'number') {
+      if (out.length < step.assert.minLength) failAssert(`output length ${out.length} < minLength ${step.assert.minLength}`);
+    }
+  }
+
   result.duration = Date.now() - startTime;
   return result;
 }
@@ -270,19 +412,55 @@ async function actionExecute(config) {
     return;
   }
   
+  // Merge inputs: workflow defaults → CLI overrides
+  const mergedInputs = {};
+  for (const [k, v] of Object.entries(workflow.inputs || {})) {
+    if (v && typeof v === 'object' && 'default' in v) mergedInputs[k] = v.default;
+  }
+  Object.assign(mergedInputs, config.inputs);
+  for (const [k, spec] of Object.entries(workflow.inputs || {})) {
+    if (spec && spec.required && (mergedInputs[k] == null || mergedInputs[k] === '')) {
+      console.error(`❌ Missing required input: --input ${k}=<value>`);
+      return;
+    }
+  }
+
   const runId = generateRunId();
   const run = {
     runId,
     workflowName: config.workflow,
     status: 'running',
     startTime: Date.now(),
+    inputs: mergedInputs,
     stepResults: {}
   };
-  
+
+  // Tee console.log into logs/<runId>.log so `tail -f` works in real time.
+  // The log file survives the run and is the authoritative human-readable trace.
+  const logFile = path.join(LOGS_DIR, `${runId}.log`);
+  const logStream = config.dryRun ? null : fs.createWriteStream(logFile, { flags: 'w' });
+  const _origLog = console.log;
+  const _origErr = console.error;
+  if (logStream) {
+    const writeToFile = (args) => {
+      const line = args.map(a => typeof a === 'string' ? a : (a === null || a === undefined ? String(a) : JSON.stringify(a))).join(' ');
+      logStream.write(line + '\n');
+    };
+    console.log = (...args) => { _origLog(...args); writeToFile(args); };
+    console.error = (...args) => { _origErr(...args); writeToFile(args); };
+  }
+  const endLogging = () => {
+    if (!logStream) return;
+    console.log = _origLog;
+    console.error = _origErr;
+    logStream.end();
+  };
+
   console.log(`
 🚀 Executing Workflow: ${workflow.name}
    Run ID: ${runId}
    Mode:   ${config.dryRun ? 'DRY RUN' : 'LIVE'}
+   Log:    ${logFile}
 `);
   
   if (config.dryRun) {
@@ -302,33 +480,39 @@ async function actionExecute(config) {
   for (const step of order) {
     console.log(`\n📝 Step: ${step.name}`);
     
-    // Check dependencies
+    // Check dependencies — both 'failed' and 'skipped' block downstream execution
     if (step.dependsOn) {
-      const failedDeps = step.dependsOn.filter(dep => 
-        run.stepResults[dep]?.status === 'failed'
-      );
-      if (failedDeps.length > 0) {
-        console.log(`   ⏭️  Skipped - failed dependencies: ${failedDeps.join(', ')}`);
-        run.stepResults[step.id] = { status: 'skipped', duration: 0 };
+      const blockingDeps = step.dependsOn.filter(dep => {
+        const s = run.stepResults[dep]?.status;
+        return s === 'failed' || s === 'skipped';
+      });
+      if (blockingDeps.length > 0) {
+        const reasons = blockingDeps.map(d => `${d}:${run.stepResults[d].status}`).join(', ');
+        console.log(`   ⏭️  Skipped - blocking dependencies: ${reasons}`);
+        run.stepResults[step.id] = { status: 'skipped', duration: 0, error: `Blocked by: ${reasons}` };
         continue;
       }
     }
     
+    // Build context for template resolution
+    const runTimestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19).replace('T', '-');
+    const ctx = { inputs: mergedInputs, steps: run.stepResults, env: { ...process.env, RUN_TIMESTAMP: runTimestamp, RUN_ID: runId } };
+
     // Execute step
-    const result = await executeStep(step, runId, config.verbose);
+    const result = await executeStep(step, runId, config.verbose, ctx);
     run.stepResults[step.id] = result;
     saveRun(runId, run);
-    
+
     console.log(`   ${result.status === 'completed' ? '✅' : '❌'} ${result.status} (${result.duration}ms)`);
     if (result.error) console.log(`      ${result.error}`);
-    
+
     // Handle retry on failure
     if (result.status === 'failed' && step.retry) {
       let attempts = 1;
       while (attempts < step.retry && result.status === 'failed') {
         console.log(`   🔄 Retry ${attempts + 1}/${step.retry}...`);
         if (step.retryDelay) await new Promise(r => setTimeout(r, step.retryDelay * 1000));
-        const retryResult = await executeStep(step, runId, config.verbose);
+        const retryResult = await executeStep(step, runId, config.verbose, ctx);
         result.status = retryResult.status;
         result.output = retryResult.output;
         result.error = retryResult.error;
@@ -355,7 +539,9 @@ async function actionExecute(config) {
    Status: ${run.status}
    Duration: ${((run.endTime - run.startTime) / 1000).toFixed(1)}s
    Run ID: ${runId}
+   Log:    ${logFile}
 `);
+  endLogging();
 }
 
 /**
@@ -380,8 +566,10 @@ async function actionRetry(config) {
     run.stepResults[s.id]?.status === 'failed'
   );
   
+  const runTimestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19).replace('T', '-');
+  const ctx = { inputs: run.inputs || {}, steps: run.stepResults, env: { ...process.env, RUN_TIMESTAMP: runTimestamp, RUN_ID: config.runId } };
   for (const step of failedSteps) {
-    const result = await executeStep(step, config.runId, config.verbose);
+    const result = await executeStep(step, config.runId, config.verbose, ctx);
     run.stepResults[step.id] = result;
     console.log(`   ${result.status === 'completed' ? '✅' : '❌'} ${step.id}: ${result.status}`);
   }
@@ -462,14 +650,20 @@ Actions:
   create   Create new workflow template
 
 Options:
-  --workflow <name>  Workflow file name (without .json)
-  --run-id <id>      Execution run ID
-  --dry-run          Preview without execution
-  --verbose, -v      Detailed output
+  --workflow <name>   Workflow file name (without .json)
+  --run-id <id>       Execution run ID
+  --input key=value   Workflow input (repeatable)
+  --dry-run           Preview without execution
+  --verbose, -v       Detailed output
+
+Env:
+  OPENCLAW_BIN        Path to openclaw CLI (default: openclaw)
 
 Examples:
   node scripts/orchestrator.mjs --action list
   node scripts/orchestrator.mjs --action execute --workflow my-workflow
+  node scripts/orchestrator.mjs --action execute --workflow osint-triage \\
+       --input subject="Jane Doe" --input scopeNotes="2024-2026, US media"
   node scripts/orchestrator.mjs --action status --run-id run-123456-abc
 `);
     process.exit(0);

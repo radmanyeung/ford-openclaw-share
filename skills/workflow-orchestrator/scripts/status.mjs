@@ -1,186 +1,266 @@
 #!/usr/bin/env node
 /**
  * Workflow Status Script
- * 
+ *
  * Usage:
- *   node status.mjs --executionId <id>
- *   node status.mjs --recent <count>
- *   node status.mjs --workflow <name>
+ *   node status.mjs                       # show latest run
+ *   node status.mjs --run-id <id>         # show specific run
+ *   node status.mjs --recent <count>      # list recent runs
+ *   node status.mjs --workflow <name>     # runs for a workflow
+ *   node status.mjs --watch               # live-refresh latest run
+ *   node status.mjs --format json         # machine-readable
+ *   node status.mjs --cleanup [minutes]   # mark stuck 'running' runs as abandoned
+ *   node status.mjs --cleanup --dry-run   # preview without writing
+ *   node status.mjs --log                 # print log path of latest run
+ *   node status.mjs --tail                # tail -f the latest run's log
+ *
+ * Flags:
+ *   -e / --executionId / --run-id   Run ID (run-<ts>-<hash>)
+ *   -r / --recent                   Count of recent runs
+ *   -w / --workflow                 Filter by workflow name
+ *   --watch                         Re-render every 2s until done
+ *   --cleanup [minutes]             Mark runs stuck in 'running' longer than
+ *                                   threshold (default 60 min) as 'abandoned'
+ *   --dry-run                       With --cleanup: preview only
+ *   --format <text|json>            Output format (default: text)
  */
 
-import { readFileSync, existsSync, readdirSync } from 'fs';
+import { readFileSync, writeFileSync, existsSync, readdirSync, statSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const STATE_DIR = process.env.WORKFLOW_STATE_DIR || join(__dirname, '..', '..', '..', 'tmp', 'workflows');
+const RUNS_DIR = process.env.WORKFLOW_RUNS_DIR || join(__dirname, '..', 'runs');
 
-// Parse arguments
 const args = process.argv.slice(2);
-const getArg = (flag) => {
-  const idx = args.indexOf(flag);
-  return idx !== -1 ? args[idx + 1] : null;
+const getArg = (...flags) => {
+  for (const f of flags) {
+    const i = args.indexOf(f);
+    if (i !== -1) return args[i + 1];
+  }
+  return null;
 };
+const hasFlag = (...flags) => flags.some(f => args.includes(f));
 
-const executionId = getArg('--executionId') || getArg('-e');
-const recent = getArg('--recent') || getArg('-r');
-const workflowName = getArg('--workflow') || getArg('-w');
+const runId = getArg('--run-id', '--executionId', '-e');
+const recent = getArg('--recent', '-r');
+const workflowName = getArg('--workflow', '-w');
 const format = getArg('--format') || 'text';
+const watch = hasFlag('--watch');
+const cleanup = hasFlag('--cleanup');
+const dryRun = hasFlag('--dry-run');
+const logFlag = hasFlag('--log');
+const tailFlag = hasFlag('--tail');
+// --cleanup may be followed by a number
+const cleanupThresholdMin = (() => {
+  if (!cleanup) return null;
+  const raw = getArg('--cleanup');
+  const n = raw && !raw.startsWith('--') ? parseInt(raw, 10) : NaN;
+  return Number.isFinite(n) && n > 0 ? n : 60;
+})();
 
-// Load state file
-function loadState(execId) {
-  const stateFile = join(STATE_DIR, `${execId}.json`);
-  if (!existsSync(stateFile)) return null;
-  return JSON.parse(readFileSync(stateFile, 'utf-8'));
+function loadRun(id) {
+  const file = join(RUNS_DIR, id.endsWith('.json') ? id : `${id}.json`);
+  if (!existsSync(file)) return null;
+  try { return JSON.parse(readFileSync(file, 'utf-8')); } catch { return null; }
 }
 
-// List recent executions
-function listRecent(count = 10) {
-  if (!existsSync(STATE_DIR)) {
-    console.log('No executions found');
-    return [];
-  }
-  
-  const files = readdirSync(STATE_DIR)
-    .filter(f => f.endsWith('.json'))
-    .map(f => {
-      const state = loadState(f.replace('.json', ''));
-      return state;
+function listRunFiles() {
+  if (!existsSync(RUNS_DIR)) return [];
+  return readdirSync(RUNS_DIR)
+    .filter(f => f.startsWith('run-') && f.endsWith('.json'))
+    .map(f => ({ id: f.replace(/\.json$/, ''), path: join(RUNS_DIR, f) }));
+}
+
+function listRuns(count = 10, workflowFilter = null) {
+  const runs = listRunFiles()
+    .map(({ id, path }) => {
+      try { return JSON.parse(readFileSync(path, 'utf-8')); } catch { return null; }
     })
     .filter(Boolean)
-    .sort((a, b) => new Date(b.startTime) - new Date(a.startTime))
-    .slice(0, count);
-  
-  return files;
+    .filter(r => !workflowFilter || r.workflowName === workflowFilter)
+    .sort((a, b) => (b.startTime || 0) - (a.startTime || 0));
+  return count ? runs.slice(0, count) : runs;
 }
 
-// Format state for display
-function formatState(state) {
-  const duration = state.endTime 
-    ? Math.round((new Date(state.endTime) - new Date(state.startTime)) / 1000)
-    : Math.round((Date.now() - new Date(state.startTime)) / 1000);
-  
+function iconFor(status) {
   return {
-    executionId: state.executionId,
-    workflow: state.workflow,
-    version: state.version,
-    status: state.status,
-    currentStep: state.currentStep,
-    duration: `${duration}s`,
-    startTime: state.startTime,
-    endTime: state.endTime,
-    stepCount: Object.keys(state.stepResults).length,
-    errors: state.errors.length
-  };
+    completed: '✅',
+    failed:    '❌',
+    skipped:   '⏭️ ',
+    running:   '🔄',
+    pending:   '⏳',
+    abandoned: '👻'
+  }[status] || '•';
 }
 
-// Display single execution
-function showExecution(execId) {
-  const state = loadState(execId);
-  
-  if (!state) {
-    console.error(`Execution not found: ${execId}`);
-    process.exit(1);
-  }
-  
-  const formatted = formatState(state);
-  
-  console.log('## Execution Status');
-  console.log(`Execution ID: ${formatted.executionId}`);
-  console.log(`Workflow: ${formatted.workflow} v${formatted.version}`);
-  console.log(`Status: ${formatted.status.toUpperCase()}`);
-  console.log(`Current Step: ${formatted.currentStep || 'N/A'}`);
-  console.log(`Duration: ${formatted.duration}`);
-  console.log(`Started: ${formatted.startTime}`);
-  console.log(`Ended: ${formatted.endTime || 'N/A'}`);
-  console.log('');
-  
-  console.log('## Step Results');
-  Object.entries(state.stepResults).forEach(([stepId, result]) => {
-    const icon = result.status === 'completed' ? '✓' : result.status === 'failed' ? '✗' : '○';
-    const duration = result.duration ? `${result.duration}ms` : '';
-    console.log(`${icon} ${stepId}: ${result.status} ${duration}`);
-    
-    if (result.error) {
-      console.log(`   Error: ${result.error}`);
-    }
-  });
-  
-  if (state.errors.length > 0) {
-    console.log('\n## Errors');
-    state.errors.forEach((err, i) => {
-      console.log(`${i + 1}. [${err.time}] ${err.step}: ${err.error}`);
-    });
-  }
-  
-  if (state.context && Object.keys(state.context).length > 0) {
-    console.log('\n## Context');
-    Object.entries(state.context).forEach(([key, value]) => {
-      console.log(`${key}: ${typeof value === 'object' ? JSON.stringify(value) : value}`);
-    });
-  }
-}
-
-// Display recent executions
-function showRecent(count) {
-  const executions = listRecent(count);
-  
-  if (executions.length === 0) {
-    console.log('No recent executions found');
+function runCleanup(thresholdMin, preview) {
+  const now = Date.now();
+  const limitMs = thresholdMin * 60 * 1000;
+  const runs = listRuns(null);
+  const stuck = runs.filter(r => r.status === 'running' && (now - r.startTime) > limitMs);
+  if (!stuck.length) {
+    console.log(`No stuck runs (threshold: ${thresholdMin} min).`);
     return;
   }
-  
-  console.log(`## Recent Executions (${executions.length})\n`);
-  
-  const table = executions.map(e => formatState(e));
-  
-  // Simple table format
-  console.log('Execution ID'.padEnd(30) + 'Workflow'.padEnd(20) + 'Status'.padEnd(12) + 'Duration'.padEnd(10) + 'Steps');
-  console.log('-'.repeat(90));
-  
-  table.forEach(row => {
-    console.log(
-      row.executionId.padEnd(30) +
-      row.workflow.padEnd(20) +
-      row.status.padEnd(12) +
-      row.duration.padEnd(10) +
-      row.stepCount
-    );
-  });
+  console.log(`Found ${stuck.length} stuck run${stuck.length > 1 ? 's' : ''} (status=running, age > ${thresholdMin} min):\n`);
+  for (const r of stuck) {
+    const ageMin = Math.round((now - r.startTime) / 60000);
+    console.log(`  ${preview ? '[DRY-RUN] would mark' : 'marking'} ${r.runId}`);
+    console.log(`    workflow: ${r.workflowName}  subject: ${r.inputs?.subject || '?'}  age: ${ageMin} min`);
+    if (!preview) {
+      r.status = 'abandoned';
+      r.endTime = now;
+      r.abandonedReason = `Stuck in 'running' for ${ageMin} min (> ${thresholdMin} min threshold)`;
+      const file = join(RUNS_DIR, `${r.runId}.json`);
+      writeFileSync(file, JSON.stringify(r, null, 2));
+    }
+  }
+  console.log(`\n${preview ? 'Dry-run complete — no files modified.' : `Marked ${stuck.length} run(s) as 'abandoned'.`}`);
 }
 
-// Main execution
-function main() {
-  try {
-    if (executionId) {
-      showExecution(executionId);
-    } else if (recent) {
-      showRecent(parseInt(recent, 10));
-    } else if (workflowName) {
-      const executions = listRecent(100).filter(e => e.workflow === workflowName);
-      if (executions.length === 0) {
-        console.log(`No executions found for workflow: ${workflowName}`);
-      } else {
-        console.log(`Found ${executions.length} execution(s) for ${workflowName}`);
-        executions.slice(0, 10).forEach(e => {
-          console.log(`  ${e.executionId} - ${e.status} (${e.startTime})`);
-        });
-      }
-    } else {
-      console.error(`Usage: node status.mjs --executionId <id> | --recent <count> | --workflow <name>
-      
-Options:
-  --executionId, -e <id>  Show specific execution
-  --recent, -r <count>    Show recent executions
-  --workflow, -w <name>   Show executions for workflow
-  --format <text|json>    Output format
-`);
-      process.exit(1);
+function durationStr(run) {
+  const end = run.endTime || Date.now();
+  const sec = Math.round((end - run.startTime) / 1000);
+  if (sec < 60) return `${sec}s`;
+  return `${Math.floor(sec / 60)}m${sec % 60}s`;
+}
+
+function renderRun(run) {
+  if (format === 'json') { console.log(JSON.stringify(run, null, 2)); return; }
+
+  const lines = [];
+  lines.push(`## Run: ${run.runId}`);
+  lines.push(`Workflow:  ${run.workflowName}`);
+  lines.push(`Status:    ${run.status.toUpperCase()} ${iconFor(run.status)}`);
+  lines.push(`Started:   ${new Date(run.startTime).toLocaleString()}`);
+  lines.push(`Duration:  ${durationStr(run)}${run.endTime ? '' : ' (in progress)'}`);
+  if (run.inputs && Object.keys(run.inputs).length) {
+    const io = Object.entries(run.inputs).map(([k, v]) => `${k}=${typeof v === 'string' ? v : JSON.stringify(v)}`).join(', ');
+    lines.push(`Inputs:    ${io}`);
+  }
+  lines.push('');
+  lines.push('Steps:');
+  const steps = Object.entries(run.stepResults || {});
+  if (!steps.length) {
+    lines.push('  (no steps run yet)');
+  } else {
+    const maxId = Math.max(...steps.map(([k]) => k.length));
+    for (const [id, r] of steps) {
+      const dur = r.duration ? ` ${r.duration}ms` : '';
+      lines.push(`  ${iconFor(r.status)} ${id.padEnd(maxId)}  ${r.status}${dur}`);
+      if (r.error) lines.push(`     ↳ ${r.error}`);
     }
-  } catch (error) {
-    console.error(`Error: ${error.message}`);
-    process.exit(1);
+  }
+  console.log(lines.join('\n'));
+}
+
+function renderRecentTable(runs) {
+  if (format === 'json') { console.log(JSON.stringify(runs, null, 2)); return; }
+  if (!runs.length) { console.log('No runs found'); return; }
+
+  const rows = runs.map(r => ({
+    id: r.runId,
+    wf: r.workflowName,
+    st: r.status,
+    icon: iconFor(r.status === 'completed' ? 'completed' : r.status === 'failed' ? 'failed' : 'running'),
+    dur: durationStr(r),
+    steps: Object.keys(r.stepResults || {}).length,
+    subject: (r.inputs && (r.inputs.subject || Object.values(r.inputs)[0])) || ''
+  }));
+  const idW = Math.max(12, ...rows.map(r => r.id.length));
+  const wfW = Math.max(12, ...rows.map(r => r.wf.length));
+  const stW = 10;
+
+  const hdr = 'Run ID'.padEnd(idW) + '  ' + 'Workflow'.padEnd(wfW) + '  ' + 'Status'.padEnd(stW) + 'Duration  Steps  Subject';
+  console.log(hdr);
+  console.log('-'.repeat(hdr.length));
+  for (const r of rows) {
+    console.log(
+      r.id.padEnd(idW) + '  ' +
+      r.wf.padEnd(wfW) + '  ' +
+      `${r.icon} ${r.st}`.padEnd(stW) +
+      r.dur.padEnd(9) + ' ' +
+      String(r.steps).padEnd(5) + '  ' +
+      (typeof r.subject === 'string' ? r.subject : JSON.stringify(r.subject)).slice(0, 40)
+    );
   }
 }
 
-main();
+function latestRun(workflowFilter = null) {
+  const runs = listRuns(1, workflowFilter);
+  return runs[0] || null;
+}
+
+async function runWatch() {
+  const clear = '\x1B[2J\x1B[H';
+  let lastId = null;
+  while (true) {
+    const run = runId ? loadRun(runId) : latestRun(workflowName);
+    if (!run) {
+      process.stdout.write(clear + 'No run found yet… (waiting)\n');
+    } else {
+      process.stdout.write(clear);
+      renderRun(run);
+      console.log(`\n(auto-refresh every 2s — Ctrl+C to quit)`);
+      if (run.endTime) {
+        console.log(`Run finished.`);
+        break;
+      }
+      lastId = run.runId;
+    }
+    await new Promise(r => setTimeout(r, 2000));
+  }
+}
+
+const LOGS_DIR = join(__dirname, '..', 'logs');
+
+function logPathFor(targetRunId) {
+  return join(LOGS_DIR, `${targetRunId}.json`.replace(/\.json$/, '.log'));
+}
+
+async function runTail(targetRunId) {
+  const { spawn } = await import('child_process');
+  const file = logPathFor(targetRunId);
+  if (!existsSync(file)) { console.error(`Log file not found: ${file}`); process.exit(1); }
+  const child = spawn('tail', ['-f', file], { stdio: 'inherit' });
+  child.on('close', code => process.exit(code || 0));
+}
+
+async function main() {
+  if (logFlag || tailFlag) {
+    const target = runId || (latestRun(workflowName)?.runId);
+    if (!target) { console.error('No run found.'); process.exit(1); }
+    const file = logPathFor(target);
+    if (logFlag && !tailFlag) { console.log(file); return; }
+    if (!existsSync(file)) { console.error(`Log file not found: ${file}\n(Only runs started after the logging patch will have logs.)`); process.exit(1); }
+    await runTail(target);
+    return;
+  }
+  if (cleanup) { runCleanup(cleanupThresholdMin, dryRun); return; }
+  if (watch) { await runWatch(); return; }
+
+  if (runId) {
+    const run = loadRun(runId);
+    if (!run) { console.error(`Run not found: ${runId}`); process.exit(1); }
+    renderRun(run);
+    return;
+  }
+
+  if (recent) {
+    renderRecentTable(listRuns(parseInt(recent, 10), workflowName));
+    return;
+  }
+
+  if (workflowName) {
+    renderRecentTable(listRuns(20, workflowName));
+    return;
+  }
+
+  // No args → show latest run (most common case)
+  const run = latestRun();
+  if (!run) { console.log('No runs found.'); return; }
+  renderRun(run);
+}
+
+main().catch(err => { console.error(`Error: ${err.message}`); process.exit(1); });

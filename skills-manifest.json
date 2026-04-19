@@ -64,7 +64,8 @@
       "skills": [
         "tavily-search",
         "tavily-research-agent",
-        "daily-intelligence-aggregator"
+        "daily-intelligence-aggregator",
+        "osint"
       ]
     },
     "data": {
@@ -232,6 +233,11 @@
       "description": "多源情報收集（RSS/Telegram/Slack + Tavily）",
       "hasScripts": true,
       "hasRefs": true
+    },
+    "osint": {
+      "description": "OSINT triage（公開主體）— 多 agent 交叉驗證，輸出 hedged draft .md 畀人工覆核",
+      "hasScripts": false,
+      "hasRefs": false
     },
     "json-yaml-validator": {
       "description": "JSON/YAML 自動驗證同修復",

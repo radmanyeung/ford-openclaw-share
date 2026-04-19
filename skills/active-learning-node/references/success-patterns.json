@@ -1,6 +1,6 @@
 {
   "version": "2.0.0",
-  "updated": "2026-03-22T20:30:02Z",
+  "updated": "2026-03-29T20:30:54Z",
   "source": "tsls-observations",
   "patterns": [
   {
@@ -13,9 +13,9 @@
       "memory_management",
       "research"
     ],
-    "count": 85,
-    "avg_tokens": 2949,
-    "last_seen": "2026-03-22T19:03:11Z"
+    "count": 121,
+    "avg_tokens": 3235,
+    "last_seen": "2026-03-26T19:02:37Z"
   },
   {
     "id": "succ-exec-read",
@@ -28,9 +28,9 @@
       "memory_management",
       "research"
     ],
-    "count": 13,
-    "avg_tokens": 14802,
-    "last_seen": "2026-03-22T13:17:27Z"
+    "count": 18,
+    "avg_tokens": 12908,
+    "last_seen": "2026-03-26T19:02:37Z"
   },
   {
     "id": "succ-exec-process",
@@ -71,9 +71,9 @@
       "memory_management",
       "research"
     ],
-    "count": 6,
-    "avg_tokens": 33171,
-    "last_seen": "2026-03-22T04:01:49Z"
+    "count": 7,
+    "avg_tokens": 32319,
+    "last_seen": "2026-03-25T19:28:12Z"
   },
   {
     "id": "succ-cron",
@@ -88,6 +88,19 @@
     "last_seen": "2026-03-22T07:07:32Z"
   },
   {
+    "id": "succ-read-write",
+    "tools": [
+      "read",
+      "write"
+    ],
+    "task_types": [
+      "memory_management"
+    ],
+    "count": 2,
+    "avg_tokens": 4447,
+    "last_seen": "2026-03-24T16:02:46Z"
+  },
+  {
     "id": "succ-",
     "tools": [],
     "task_types": [
@@ -96,6 +109,34 @@
     "count": 1,
     "avg_tokens": 2372,
     "last_seen": "2026-03-21T16:00:57Z"
+  },
+  {
+    "id": "succ-cron-exec-read",
+    "tools": [
+      "cron",
+      "exec",
+      "read"
+    ],
+    "task_types": [
+      "memory_management"
+    ],
+    "count": 1,
+    "avg_tokens": 67891,
+    "last_seen": "2026-03-24T19:06:38Z"
+  },
+  {
+    "id": "succ-edit-exec-read",
+    "tools": [
+      "edit",
+      "exec",
+      "read"
+    ],
+    "task_types": [
+      "general"
+    ],
+    "count": 1,
+    "avg_tokens": 4392,
+    "last_seen": "2026-03-23T13:03:12Z"
   },
   {
     "id": "succ-edit-exec-read-session_status-write",

@@ -992,7 +992,7 @@ Setup Skill 包含 16 個獨立模組，你可以揀需要嘅跟：
 
 ## Skills 分類
 
-36 個 Skills 分為 10 類：
+37 個 Skills 分為 10 類：
 
 | 分類 | 數量 | 做咩用 | 需要 API Key？ |
 |------|------|--------|----------------|
@@ -1001,7 +1001,7 @@ Setup Skill 包含 16 個獨立模組，你可以揀需要嘅跟：
 | **monitoring** | 4 | 自動監控、日報週報、log 管理 | 唔需要 |
 | **skills-mgmt** | 6 | Skill 搜尋、審計、版本管理 | 唔需要 |
 | **workflow** | 3 | 多步驟任務自動化 | 唔需要 |
-| **research** | 3 | AI 網頁搜尋同深度研究 | 需要 `TAVILY_API_KEY` |
+| **research** | 4 | AI 網頁搜尋、深度研究、OSINT triage | 部分需要 `TAVILY_API_KEY` |
 | **data** | 2 | JSON/YAML 檔案驗證同修復 | 唔需要 |
 | **integration** | 2 | 多個 API 整合 + 自動報告 | 唔需要 |
 | **learning** | 4 | 自我學習 + YouTube 影片學習 + Context 工程 | 唔需要 |

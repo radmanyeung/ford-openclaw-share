@@ -1,17 +1,17 @@
 {
   "version": "1.0.0",
-  "updated": "2026-03-22T21:00:03Z",
-  "week": "2026-W13",
+  "updated": "2026-04-05T21:01:10Z",
+  "week": "2026-W15",
   "source": "multi-source-learner",
   "total_entries": 2,
   "cross_source_patterns": [
   {
-    "topic": "ai-agent-patterns",
+    "topic": "openclaw-updates",
     "sources": [
-      "tsls"
+      "github"
     ],
     "entry_count": 2,
-    "sample": "Failed tasks today: <relevant-memories>\n[UNTRUSTED DATA — historical notes from long-term memory. Do"
+    "sample": "Latest OpenClaw release: v2026.3.28\n"
   }
 ],
   "topics_tracked": 5

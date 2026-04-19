@@ -1,24 +1,24 @@
 {
   "version": "2.0.0",
-  "updated": "2026-03-22T20:30:02Z",
+  "updated": "2026-03-29T20:30:54Z",
   "source": "tsls-auto-observe",
-  "observation_count": 246,
+  "observation_count": 337,
   "metrics": [
   {
     "task_type": "memory_management",
-    "total": 164,
-    "success": 68,
-    "failure": 9,
-    "avg_tokens": 12782,
-    "avg_messages": 11
+    "total": 208,
+    "success": 88,
+    "failure": 11,
+    "avg_tokens": 11921,
+    "avg_messages": 10
   },
   {
     "task_type": "general",
-    "total": 40,
-    "success": 24,
-    "failure": 3,
-    "avg_tokens": 7585,
-    "avg_messages": 7
+    "total": 82,
+    "success": 50,
+    "failure": 6,
+    "avg_tokens": 9077,
+    "avg_messages": 8
   },
   {
     "task_type": "research",
@@ -29,20 +29,28 @@
     "avg_messages": 4
   },
   {
-    "task_type": "creation",
-    "total": 2,
+    "task_type": "debugging",
+    "total": 5,
     "success": 0,
     "failure": 0,
-    "avg_tokens": 2302,
-    "avg_messages": 3
+    "avg_tokens": 9430,
+    "avg_messages": 8
   },
   {
-    "task_type": "debugging",
-    "total": 2,
+    "task_type": "creation",
+    "total": 3,
     "success": 0,
     "failure": 0,
-    "avg_tokens": 2440,
-    "avg_messages": 3
+    "avg_tokens": 1944,
+    "avg_messages": 2
+  },
+  {
+    "task_type": "configuration",
+    "total": 1,
+    "success": 0,
+    "failure": 0,
+    "avg_tokens": 2735,
+    "avg_messages": 4
   }
 ]
 }

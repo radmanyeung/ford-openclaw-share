@@ -1,0 +1,157 @@
+{
+  "name": "osint-triage",
+  "description": "Early-stage OSINT triage on a public subject. Identifies candidate sources, extracts claims, cross-compares across sources, flags weak/contradictory items, and produces a draft summary for analyst review. Does NOT issue final accusations; uncertainty is preserved throughout.",
+  "metadata": {
+    "purpose": "analyst-support",
+    "stage": "early-triage",
+    "agentsUsed": ["main", "gpt", "gemini", "claude", "water"],
+    "agentRoles": {
+      "main": "scoping gate + final hedged draft",
+      "gpt": "source discovery + claim extraction pass 1",
+      "gemini": "independent claim extraction pass 2",
+      "claude": "cross-compare + weakness ledger",
+      "water": "devil's-advocate accusation-leakage review (messaging-only, sandboxed)"
+    },
+    "disclaimer": "Draft output is non-authoritative. Claims must be verified by a human analyst before any attribution or publication.",
+    "ethicsGuardrails": [
+      "Public sources only",
+      "No doxxing, no private data inference",
+      "No final accusations — language must remain hedged",
+      "Uncertainty, source strength, and contradictions must be visible in output"
+    ]
+  },
+  "inputs": {
+    "subject": {
+      "description": "Public subject name or identifier to triage",
+      "required": true
+    },
+    "scopeNotes": {
+      "description": "Optional constraints (time window, geography, domain)",
+      "required": false
+    },
+    "telegramTarget": {
+      "description": "Optional Telegram chat id to deliver deliverable to. If omitted, no TG delivery.",
+      "required": false
+    }
+  },
+  "steps": [
+    {
+      "id": "scope-check",
+      "name": "Scope & ethics gate",
+      "type": "agent",
+      "agent": "main",
+      "params": {
+        "task": "Review the requested subject '${inputs.subject}' and scope '${inputs.scopeNotes}'.\n\nStep 1 — Ethics check (hard gate):\nIf the subject appears to be a non-public individual, a minor, or the request carries harassment/doxxing signals (regardless of whether a scope is provided), output exactly the line 'SCOPE_REFUSED' followed by a short reason. STOP. Do not produce any approval text.\n\nStep 2 — Scope handling:\n(a) If scope is non-empty and reasonable, output 'SCOPE_APPROVED' on its own line, then a short approved scope statement (who, what time window, what domains are in/out of scope).\n\n(b) If scope is EMPTY but the subject is a clear PUBLIC ENTITY of any of the following kinds, INFER a sensible default scope and proceed with approval:\n    - People: athletes, politicians, executives, authors, entertainers (well-known public figures only)\n    - Organizations: companies, brands, institutions, non-profits, government bodies, media outlets\n    - Products & models: consumer electronics (GPUs/CPUs/phones/etc.), vehicles (cars, motorcycles by model name), software/apps (open-source or commercial), published works (books, films, albums, games), medications, appliances\n    - Events: conferences, public incidents, elections, product launches\n    - Places & concepts: public landmarks, open-source projects, standards, protocols\n\nTailor the default scope to the subject type:\n    - Person → public career, achievements, media coverage; time window = last 10 years or full public-career span\n    - Organization → founding/leadership, products/services, public controversies, recent activities; time window = last 5-10 years\n    - Product/model → official specs, release timeline, reviews, notable issues/recalls, aftermarket coverage; time window = from announcement to present\n    - Software → repository/maintainers, release history, ecosystem, notable forks/incidents; time window = project lifetime or last 5 years\n    - Event → timeline, principals, public reporting, aftermath\n\nAlways exclude private individuals unless they are themselves public figures.\n\nOutput 'SCOPE_APPROVED' on its own line, then the auto-generated scope prefixed with 'Auto-generated default scope (user did not specify — refine if needed):'.\n\n(c) If scope is EMPTY AND the subject is ambiguous (a common name matching many people, a generic term, an unclear abbreviation, or not clearly a single public entity), STILL OUTPUT 'SCOPE_APPROVED' on its own line. Then produce a DISAMBIGUATION-AWARE default scope:\n    - Prefix the scope block with '⚠️ AMBIGUOUS SUBJECT — default scope is best-effort; refine for precision'.\n    - List 2 to 5 plausible candidate interpretations (each: short label + distinguishing note such as profession, birth year, domain, or origin).\n    - Nominate the most widely-known / most publicly-notable candidate as the 'Primary candidate for this run'.\n    - Include a line: 'Suggestion: to target a specific candidate, re-run with scope=\"<identifier + time window + domain>\"'.\n    - Give a sensible default time window and domain based on the primary candidate's type (using the per-type rules in 2b).\n\nAMBIGUITY alone is NEVER a reason to SCOPE_REFUSED — only Step 1 ethics signals can refuse."
+      },
+      "output": "scopeStatement",
+      "timeout": 120,
+      "assert": {
+        "contains": ["SCOPE_APPROVED"],
+        "notContains": ["SCOPE_REFUSED"]
+      }
+    },
+    {
+      "id": "identify-sources",
+      "name": "Identify candidate public sources",
+      "type": "agent",
+      "agent": "gpt",
+      "dependsOn": ["scope-check"],
+      "params": {
+        "task": "For the approved scope: ${steps.scope-check.output}\n\nList candidate PUBLIC sources that could inform triage. For each: URL/handle, source type (mainstream news, official filing, social, blog, forum, academic, press release), apparent reliability tier (A=established/on-record, B=reputable but partisan, C=self-published/unverified, D=anonymous/hostile), and first-seen date if known. Do NOT fabricate URLs — mark unknown fields as 'unknown'. Include key quotes or summaries per source so downstream extractors have working text.\n\nRESPONSE CONSTRAINTS:\n- Rely on your training knowledge only — do NOT invoke web search, fetching, or any external tools.\n- Minimum 6 sources, maximum 12.\n- Keep total response under 60 lines of markdown.\n- If you find yourself in a retry / tool-call loop, stop and emit the current best list."
+      },
+      "output": "sources",
+      "timeout": 180,
+      "assert": {
+        "minLength": 200
+      }
+    },
+    {
+      "id": "extract-claims-gpt",
+      "name": "Extract claims (pass 1 — gpt)",
+      "type": "agent",
+      "agent": "gpt",
+      "dependsOn": ["identify-sources"],
+      "params": {
+        "task": "From the sources in ${steps.identify-sources.output}, extract key factual CLAIMS about the subject. For each claim: id, one-sentence statement, source id(s), direct quote if available, claim type (event/attribution/relationship/numeric/opinion). Do not paraphrase into stronger form than the source. Flag opinion vs fact."
+      },
+      "output": "claimsGpt",
+      "timeout": 300
+    },
+    {
+      "id": "extract-claims-gemini",
+      "name": "Extract claims (pass 2 — gemini, independent)",
+      "type": "agent",
+      "agent": "gemini",
+      "dependsOn": ["identify-sources"],
+      "params": {
+        "task": "Independently from the same sources ${steps.identify-sources.output}, extract key factual CLAIMS about the subject. Same schema as claimsGpt (id, statement, source ids, quote, claim type). Work independently — do NOT reference the other extractor's output. This is for cross-validation; favour a skeptical read — if a source hedges, keep the hedge."
+      },
+      "output": "claimsGemini",
+      "timeout": 300
+    },
+    {
+      "id": "cross-compare",
+      "name": "Cross-compare repeated vs single-source claims",
+      "type": "agent",
+      "agent": "claude",
+      "dependsOn": ["extract-claims-gpt", "extract-claims-gemini"],
+      "params": {
+        "task": "Compare claim sets:\nSet A: ${steps.extract-claims-gpt.output}\nSet B: ${steps.extract-claims-gemini.output}\n\nProduce: (1) claims that appear in ≥2 independent sources (corroborated), (2) claims from a single source only (uncorroborated), (3) claims that contradict each other across sources (flag both sides with source ids), (4) claims that both extractors agreed on vs only one extractor captured (extractor-agreement signal). Keep direct quotes where helpful."
+      },
+      "output": "comparison",
+      "timeout": 300
+    },
+    {
+      "id": "flag-weakness",
+      "name": "Flag weakly supported / contradictory items",
+      "type": "agent",
+      "agent": "claude",
+      "dependsOn": ["cross-compare"],
+      "params": {
+        "task": "Using ${steps.cross-compare.output}, produce a WEAKNESS LEDGER: for each uncorroborated or contradicted claim, note the concern (single low-tier source, anonymous source, contradicted by higher-tier source, time-inconsistent, unclear attribution, possible AI-generated content, possible translation drift). Recommend what evidence would strengthen or kill each claim. Explicitly do NOT resolve contradictions on your own — present them."
+      },
+      "output": "weaknessLedger",
+      "timeout": 240
+    },
+    {
+      "id": "draft-summary",
+      "name": "Draft analyst summary (hedged, non-accusatory)",
+      "type": "agent",
+      "agent": "main",
+      "dependsOn": ["flag-weakness"],
+      "params": {
+        "task": "Write a DRAFT triage summary for an analyst to review. Structure:\n1. Subject & scope (from ${steps.scope-check.output})\n2. Sources surveyed (count by tier, from ${steps.identify-sources.output})\n3. Corroborated claims (from ${steps.cross-compare.output}) — use hedged language ('reported by multiple sources', 'according to X')\n4. Uncorroborated / contradicted claims (from ${steps.flag-weakness.output})\n5. Open questions & recommended next verification steps\n6. Confidence note per section (low/medium/high) with rationale\n\nHARD RULES:\n- No final accusations. No 'the subject did X' — always 'sources report X', 'X is alleged', 'unverified'.\n- Preserve uncertainty. If sources disagree, the draft must say so.\n- This is a draft for HUMAN analyst review, not for publication."
+      },
+      "output": "draftSummary",
+      "timeout": 300
+    },
+    {
+      "id": "self-review",
+      "name": "Devil's-advocate review for accusation leakage",
+      "type": "agent",
+      "agent": "water",
+      "dependsOn": ["draft-summary"],
+      "params": {
+        "task": "Review the draft ${steps.draft-summary.output} as a devil's-advocate reviewer. Flag any sentence that: (a) states an allegation as fact, (b) attributes motive without a cited source, (c) loses uncertainty that was present in the source claims, (d) identifies a private third party unnecessarily. Return a diff-style list of problem sentences with suggested hedged rewrites. Do NOT rewrite the whole document."
+      },
+      "output": "reviewNotes",
+      "timeout": 180
+    },
+    {
+      "id": "finalize-package",
+      "name": "Package deliverable for analyst",
+      "type": "write-report",
+      "dependsOn": ["self-review"],
+      "path": "~/.openclaw/workspace/osint-triage/${env.RUN_TIMESTAMP}-${inputs.subject}.md",
+      "content": "# OSINT Triage Draft — ${inputs.subject}\n\n_Draft for analyst review only. Not for publication._\n\n## Scope\n${steps.scope-check.output}\n\n## Sources\n${steps.identify-sources.output}\n\n## Claim Comparison\n${steps.cross-compare.output}\n\n## Weakness Ledger\n${steps.flag-weakness.output}\n\n## Draft Summary\n${steps.draft-summary.output}\n\n## Reviewer Notes\n${steps.self-review.output}\n"
+    },
+    {
+      "id": "deliver-to-tg",
+      "name": "Deliver deliverable to Telegram (if target provided)",
+      "type": "shell",
+      "dependsOn": ["finalize-package"],
+      "command": "if [ -n \"${inputs.telegramTarget}\" ]; then openclaw message send --channel telegram --target \"${inputs.telegramTarget}\" --message \"OSINT triage draft ready — subject: ${inputs.subject}. Draft only; human analyst must verify.\" --media \"$HOME/.openclaw/workspace/osint-triage/${env.RUN_TIMESTAMP}-${inputs.subject}.md\" --force-document --json; else echo 'telegramTarget empty — skipping TG delivery'; fi",
+      "timeout": 60
+    }
+  ]
+}
