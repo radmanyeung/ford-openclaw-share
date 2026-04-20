@@ -1,0 +1,53 @@
+{
+  "name": "example-workflow",
+  "description": "Example workflow demonstrating sequential and parallel execution",
+  "steps": [
+    {
+      "id": "setup",
+      "name": "Setup Environment",
+      "type": "shell",
+      "command": "echo 'Setting up environment...'",
+      "timeout": 30
+    },
+    {
+      "id": "fetch-data",
+      "name": "Fetch Data from API",
+      "type": "shell",
+      "command": "echo 'Fetching data...'",
+      "dependsOn": ["setup"],
+      "timeout": 60
+    },
+    {
+      "id": "process-users",
+      "name": "Process Users",
+      "type": "shell",
+      "command": "echo 'Processing users...'",
+      "dependsOn": ["fetch-data"],
+      "timeout": 45
+    },
+    {
+      "id": "process-posts",
+      "name": "Process Posts",
+      "type": "shell",
+      "command": "echo 'Processing posts...'",
+      "dependsOn": ["fetch-data"],
+      "timeout": 45
+    },
+    {
+      "id": "aggregate",
+      "name": "Aggregate Results",
+      "type": "shell",
+      "command": "echo 'Aggregating results...'",
+      "dependsOn": ["process-users", "process-posts"],
+      "timeout": 30
+    },
+    {
+      "id": "cleanup",
+      "name": "Cleanup",
+      "type": "shell",
+      "command": "echo 'Cleaning up...'",
+      "dependsOn": ["aggregate"],
+      "timeout": 15
+    }
+  ]
+}
